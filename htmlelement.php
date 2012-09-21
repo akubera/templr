@@ -12,12 +12,13 @@ namespace templr;
 class HtmlElement {
  
     public $type;
-    var $children = array();
-    var $attributes = array();
+    var $children = [];
+    var $attributes = [];
+
     var $parent = null;
     var $text = '';
 
-    public function __construct($type, $attributes = array(), $text = "", $selfclose = false) {
+    public function __construct($type, $attributes = [], $text = "", $selfclose = false) {
         $this->type = $type;
         $this->selfclosing = $selfclose;
         if (is_array($attributes)) {
@@ -87,7 +88,7 @@ class HtmlElement {
             $result .= ">";
             $result .= $this->text;
             foreach ($this->children as $child) {
-                assert($child->parent == $this);
+                assert($child->parent === $this);
                 $result .= $child;
             }
             $result .= "</{$this->type}>\n";
