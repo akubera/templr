@@ -16,7 +16,6 @@ class HtmlElement {
     var $parent = null;
     var $text = '';
     static $default_tag_name = "div";
-
     protected $attributes = [];
 
     public function __construct($type, $attributes = [], $text = "", $selfclose = false) {
@@ -28,8 +27,7 @@ class HtmlElement {
 
         // Removes all classes and stores into a list 
         $classes = $this->extractClasses($type);
-        
-        
+
         if ($id !== null) {
             $this->setAttribute('id', $id);
         }
@@ -89,9 +87,9 @@ class HtmlElement {
         if (!$this->attributes['class']) {
             $this->attributes['class'] = [];
         }
-       $this->attributes['class'] += $classes;
+        $this->attributes['class'] += $classes;
     }
-    
+
     /**
      * 
      * @param String $class_name
@@ -123,7 +121,7 @@ class HtmlElement {
             }
         } else if ($attribute == 'class') {
             $this->AddClass($value);
-        }else {
+        } else {
             $this->attributes[$attribute] = $value;
         }
     }
@@ -164,7 +162,7 @@ class HtmlElement {
             return $this->text;
         }
         $result = "<{$this->type}";
-        
+
         // compress the array of classes to a string
         if (isset($this->attributes['class'])) {
             $tmp_classlist = $this->attributes['class'];
