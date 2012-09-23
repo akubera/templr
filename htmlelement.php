@@ -18,6 +18,36 @@ class HtmlElement {
     var $text = '';
 
     public function __construct($type, $attributes = [], $text = "", $selfclose = false) {
+        if (type === "") {
+            throw new Exception("Type must not be empty string");
+        }
+
+        // Break type string around the '#'
+        $a = explode("#", $type);
+
+        // If we lead with #idname - default type to div
+        if ($a[0] === "" && $a[1]) {
+            $a[0] = "div";
+        }
+
+        $b = explode('.',$a[0]);
+        
+        $type = $b[0];
+        $b = \array_slice($b, 1);
+
+        // a[1] now has everything after '#' char 
+        if ($a[1]) {
+            $idlist = explode('.', $a[1]);
+            // the first element is the id
+            $idlist[0] && $attributes['id'] = $idlist[0];
+            $b = array_merge($b, array_slice($idlist, 1));
+        }
+        $groups = $b;
+        if ($groups !== []) {
+            // initilize to blank string if not already set
+            !$attributes['class'] && $attributes['class'] = "";
+            $attributes['class'] .= implode(" ", $groups);
+        }
         $this->type = $type;
         $this->selfclosing = $selfclose;
         if (is_array($attributes)) {
