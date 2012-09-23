@@ -81,6 +81,7 @@ class HtmlElement {
             $this->attributes['class'] = [];
         }
         $this->attributes['class'][] = $class_name;
+        return $this;
     }
 
     public function AddClasses($classes) {
@@ -88,6 +89,7 @@ class HtmlElement {
             $this->attributes['class'] = [];
         }
         $this->attributes['class'] += $classes;
+        return $this;
     }
 
     /**
@@ -96,6 +98,7 @@ class HtmlElement {
      */
     public function RemoveClass($class_name) {
         $this->attributes['class'] = array_diff($this->attributes['class'], [$class_name]);
+        return $this;
     }
 
     /**
@@ -104,6 +107,7 @@ class HtmlElement {
      */
     public function RemoveClasses($classes) {
         $this->attributes['class'] = array_diff($this->attributes['class'], $classes);
+        return $this;
     }
 
     public function addAttribute($attribute, $value = '') {
@@ -124,12 +128,14 @@ class HtmlElement {
         } else {
             $this->attributes[$attribute] = $value;
         }
+        return $this;
     }
 
     public function removeAttribute($attribute) {
         if (isset($this->attributes[$attribute])) {
             unset($this->attributes[$attribute]);
         }
+        return $this;
     }
 
     public function addChild($child) {
@@ -139,7 +145,8 @@ class HtmlElement {
         assert(get_class($child) === __class__);
         assert(!$this->selfclosing);
         assert($this->parent != $child);
-        assert($child != $this);
+        assert($child !== $this);
+        assert($child !== null);
         $child->parent = $this;
         array_push($this->children, $child);
         return $child;
