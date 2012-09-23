@@ -10,11 +10,10 @@
 namespace templr;
 
 class HtmlElement {
- 
+
     public $type;
     var $children = [];
     var $attributes = [];
-
     var $parent = null;
     var $text = '';
 
@@ -101,6 +100,10 @@ class HtmlElement {
         return new HtmlElement("br", 0, 0, true);
     }
 
+    static function HR() {
+        return new HtmlElement("hr", 0, 0, true);
+    }
+
     static function Link($location = null, $txt = '') {
         $a = new HtmlElement("a", 0, $txt);
         if ($location != null) {
@@ -121,5 +124,5 @@ class HtmlElement {
         $a = new HtmlElement("", 0, $txt);
         return $a;
     }
-    
+
 }

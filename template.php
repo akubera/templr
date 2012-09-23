@@ -2,6 +2,8 @@
 
 namespace templr;
 
+require_once 'init.php';
+
 class Template implements \ArrayAccess {
 
     const require_regex = "/^ *#require +([a-zA-Z\.]+)/m"; // #require filename.txt
@@ -223,7 +225,7 @@ class Template implements \ArrayAccess {
         //
         if ($data != NULL):
             foreach ($data as $_name => $_) {
-                var_dump($_);
+                //var_dump($_);
                 global $$_name;
                 $$_name = $_;
             }
