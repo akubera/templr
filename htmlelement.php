@@ -38,8 +38,12 @@ class HtmlElement {
 
         $this->type = $type;
         $this->selfclosing = $selfclose;
-        $this->setAttribute($attributes);
-        $this->addText($text);
+        if ($attributes) {
+            $this->setAttribute($attributes);
+        }
+        if ($text) {
+            $this->addText($text);
+        }
     }
 
     private function extractID(&$str) {
@@ -123,7 +127,7 @@ class HtmlElement {
             foreach ($attribute as $key => $value) {
                 $this->setAttribute($key, $value);
             }
-        } else if ($attribute == 'class') {
+        } else if ($attribute === 'class') {
             $this->AddClass($value);
         } else {
             $this->attributes[$attribute] = $value;
@@ -171,7 +175,7 @@ class HtmlElement {
         $result = "<{$this->type}";
 
         // compress the array of classes to a string
-        if (isset($this->attributes['class'])) {
+        if (isset($this->attributes['class']) && $this->attributes['class']) {
             $tmp_classlist = $this->attributes['class'];
             $this->attributes['class'] = implode(' ', $tmp_classlist);
         }
