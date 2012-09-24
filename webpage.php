@@ -43,6 +43,11 @@ class WebPage implements \ArrayAccess {
             return;
         }
         $this->renderlock = true;
+        
+        if (!file_exists($this->root_name)) {
+            die ("Could not open root templr file '{$this->root_name}'. Aborting!");
+        }
+        
         $str = $this->render_file($this->root_name);
 
         // Replace all %% with WEB_ROOT
