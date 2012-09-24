@@ -332,3 +332,6 @@ class Template implements \ArrayAccess {
     }
 
 }
+
+require_once 'init.php';
+

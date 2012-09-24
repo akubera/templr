@@ -228,3 +228,5 @@ class HtmlElement {
     }
 
 }
+
+require_once 'init.php';
