@@ -12,18 +12,17 @@ namespace templr;
 class WebPage implements \ArrayAccess {
 
     static $default_template_name = "index";
-    
+
     private $path = [TEMPLR_ROOT];
     private $data = [];
     private $renderlock = false;
     private $render_file_cache = [];
 
     public function __construct($template = NULL) {
-
         $template = $template ? : WebPage::$default_template_name;
         $this->template_root_path = TEMPLR_ROOT;
 
-        $this->root_name = $this->template_root_path . DS . $template . TEMPLR_EXT;
+        $this->root_name = $this->template_root_path . $template . TEMPLR_EXT;
 
         $this->data['styles'] = [];
         $this->data['scripts'] = [];
@@ -44,6 +43,11 @@ class WebPage implements \ArrayAccess {
             return;
         }
         $this->renderlock = true;
+        
+        if (!file_exists($this->root_name)) {
+            die ("Could not open root templr file '{$this->root_name}'. Aborting!");
+        }
+        
         $str = $this->render_file($this->root_name);
 
         // Replace all %% with WEB_ROOT
@@ -188,3 +192,4 @@ class WebPage implements \ArrayAccess {
 
 }
 
+require_once 'init.php';
