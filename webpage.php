@@ -12,20 +12,43 @@ namespace templr;
 class WebPage implements \ArrayAccess {
 
     static $default_template_name = "index";
-
-    private $path = [TEMPLR_ROOT];
-    private $data = [];
+    static $template_path = [TEMPLR_ROOT];
+    private $_path = [TEMPLR_ROOT];
+    private $_data = [];
     private $renderlock = false;
     private $render_file_cache = [];
+    private $_template_root_path = '';
+    private $_root_name = '';
 
-    public function __construct($template = NULL) {
+    public function __construct($template = NULL, $opts = []) {
         $template = $template ? : WebPage::$default_template_name;
-        $this->template_root_path = TEMPLR_ROOT;
+        $ext = @$opts['ext'] ? : TEMPLR_EXT;
+        $filename = "";
+        
+        self::$template_path = array_merge(Templr::ViewPath(), Templr::TemplatePath());
+        foreach (self::$template_path as $dir) {
+            $f = $dir . $template . $ext;
+//            echo "checking $f<br/>";
+            if (file_exists($f)) {
+                $filename = $f;
+                $this->_template_root_path = $dir;
+                break;
+            }
+        }
+        
+        if (!$filename) {
+            var_dump(WebPage::$template_path);
+            echo "<br/>";
+            print "error : Could not find file " . $template . " in WebPage template path ({$f}).";
+            exit(1);
+        }
 
-        $this->root_name = $this->template_root_path . $template . TEMPLR_EXT;
+//        $this->template_root_path = TEMPLR_ROOT;
+//        $this->root_name = $this->template_root_path . $template . TEMPLR_EXT;
+        $this->_root_name = $filename;
 
-        $this->data['styles'] = [];
-        $this->data['scripts'] = [];
+        $this->_data['styles'] = [];
+        $this->_data['scripts'] = [];
     }
 
     /**
@@ -43,12 +66,12 @@ class WebPage implements \ArrayAccess {
             return;
         }
         $this->renderlock = true;
-        
-        if (!file_exists($this->root_name)) {
-            die ("Could not open root templr file '{$this->root_name}'. Aborting!");
+
+        if (!file_exists($this->_root_name)) {
+            die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
-        
-        $str = $this->render_file($this->root_name);
+
+        $str = $this->render_file($this->_root_name);
 
         // Replace all %% with WEB_ROOT
         $str = str_replace("%%", TEMPLR_WEB_ROOT, $str);
@@ -92,23 +115,23 @@ class WebPage implements \ArrayAccess {
             }
 
             // find a file matching that filename in the path
-            foreach (array_reverse($this->path) as $path) {
+            foreach (array_reverse($this->_path) as $path) {
                 // exact name
                 $name = $path . '/' . $varname . ".php";
-                
+
                 // lowercase name
                 $lname = $path . '/' . strtolower($varname) . ".php";
-                
+
                 // the filename if it exists
                 $filename = is_file($name) ? $name : is_file($lname) ? $lname : false;
-                
+
                 if ($filename) {
                     // save the name of the file corresponding to the label
                     $this->render_file_cache[$name] = $filename;
-                    
+
                     // render that file as we are rendering this one
                     $str = $this->render_file($filename);
-                    
+
                     // the resulting string replaces the %label%
                     $string = str_replace("%$varname%", $str, $string, $one);
 
@@ -116,7 +139,7 @@ class WebPage implements \ArrayAccess {
                     break;
                 }
             }
-        // TODO : Unknown Variable Match
+            // TODO : Unknown Variable Match
         }
         return $string;
     }
@@ -129,7 +152,7 @@ class WebPage implements \ArrayAccess {
      */
     private function read_file($filename) {
         // $page is used to allow the file to access given data (var names fall through)
-        $page = $this->data;
+        $page = $this->_data;
         if (is_file($filename)) {
             ob_start();
             include $filename;
@@ -139,7 +162,7 @@ class WebPage implements \ArrayAccess {
     }
 
     public function AddStyle($style) {
-        array_push($this->data['styles'], (string) $style);
+        array_push($this->_data['styles'], (string) $style);
     }
 
     public function AddStyles($styles) {
@@ -149,36 +172,45 @@ class WebPage implements \ArrayAccess {
     }
 
     public function AddScript($script) {
-        array_push($this->data['scripts'], (string) $script);
+        array_push($this->_data['scripts'], (string) $script);
     }
 
     public function AddToPath($path) {
-        array_push($this->path, (string) $path);
+        array_push($this->_path, (string) $path);
     }
 
     public function GetPath() {
-        return $this->path;
+        return $this->_path;
+    }
+
+    static public function AddPath($dir) {
+        // ensure that $dir is a string
+        array_unshift(WebPage::$template_path, (string) $dir);
     }
 
     // Array Functions - serve as a wrapper around $this->data
     public function offsetSet($offset, $value) {
         if (is_null($offset)) {
-            $this->data[] = $value;
+            $this->_data[] = $value;
         } else {
-            $this->data[$offset] = $value;
+            $this->_data[$offset] = $value;
         }
     }
 
     public function offsetExists($offset) {
-        return isset($this->data[$offset]);
+        return isset($this->_data[$offset]);
     }
 
     public function offsetUnset($offset) {
-        unset($this->data[$offset]);
+        unset($this->_data[$offset]);
     }
 
     public function offsetGet($offset) {
-        return isset($this->data[$offset]) ? $this->data[$offset] : null;
+        return isset($this->_data[$offset]) ? $this->_data[$offset] : null;
+    }
+
+    public function __set($name, $value) {
+        $this->_data[$name] = $value;
     }
 
     /**
