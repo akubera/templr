@@ -8,7 +8,7 @@ namespace templr;
 class Templr {
 
     static private $configure = [];
-    
+
     /**
      * 
      * @param array $opts
@@ -16,7 +16,7 @@ class Templr {
     public static function config(Array $opts) {
         static::$configure = $opts;
     }
-    
+
     /**
      * 
      * @param String $view_name
@@ -36,8 +36,7 @@ class Templr {
         }
         return NULL;
     }
-    
-    
+
     public static function ViewPath() {
         return self::$configure['VIEW_PATH'] ?: [];
     }
