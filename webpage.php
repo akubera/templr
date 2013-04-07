@@ -24,7 +24,7 @@ class WebPage implements \ArrayAccess {
         $template = $template ? : WebPage::$default_template_name;
         $ext = @$opts['ext'] ? : TEMPLR_EXT;
         $filename = "";
-        
+
         self::$template_path = array_merge(Templr::ViewPath(), Templr::TemplatePath());
         foreach (self::$template_path as $dir) {
             $f = $dir . $template . $ext;
@@ -35,7 +35,7 @@ class WebPage implements \ArrayAccess {
                 break;
             }
         }
-        
+
         if (!$filename) {
             var_dump(WebPage::$template_path);
             echo "<br/>";

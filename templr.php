@@ -20,6 +20,7 @@ class Templr {
     /**
      * 
      * @param String $view_name
+     * @return mFile The view
      */
     public static function GetView($view_name) {
 
@@ -31,7 +32,7 @@ class Templr {
             }
             $b = file_exists($name);
             if ($b) {
-                return new WebPage($name);
+                return new mFile($name); //WebPage($name);
             }
         }
         return NULL;
