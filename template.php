@@ -3,6 +3,7 @@
 namespace templr;
 
 require_once 'init.php';
+require_once 'plisp/plisp.php';
 
 class Template implements \ArrayAccess {
 
@@ -34,10 +35,15 @@ class Template implements \ArrayAccess {
         } else {
             $this->contents = ob_get_clean();
         }
-
+        print $this->contents . "\n";
         
         $matches = [];
         $filenames = [];
+        
+        // search for plisp expressions
+        if (preg_match(plisp\PLISP::regex, $this->contents, $matches)) {
+            var_dump($matches);
+        }
 
         // search for any require statements - if so replace them
         while (preg_match(self::require_regex, $this->contents, $matches)) {
@@ -311,6 +317,17 @@ class Template implements \ArrayAccess {
         }
     }
 
+    /*
+     * Stateless processing functions
+     */
+    
+    static function StripComments(&$string) {
+        
+    }
+    
+    /*
+     * ArrayAccess functions
+     */
     public function offsetSet($offset, $value) {
         if (is_null($offset)) {
             $this->container[] = $value;

@@ -1,6 +1,6 @@
 <?php   
 
-namespace plisp;
+namespace \templr\plisp;
 
 global $plisp_registry;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace plisp;
+namespace templr\plisp;
 
 class plisp_list {
     

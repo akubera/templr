@@ -1,6 +1,9 @@
 <?php
+/*
+ * plisp/plisp.php
+ */
 
-namespace plisp;
+namespace templr\plisp;
 
 global $plisp_registry;
 $plisp_registry = [];
@@ -9,7 +12,10 @@ require_once 'list.php';
 require_once 'token.php';
 
 class PLISP {
-    
+
+    const regex = "/^\(((?>[^()]+)|(?:R))*\) *$/"; // (function arg1 arg2)
+
+
     public function __construct() {
     }
     

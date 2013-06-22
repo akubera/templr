@@ -20,53 +20,77 @@ class WebPage implements \ArrayAccess {
     private $_template_root_path = '';
     private $_root_name = '';
 
+    /**
+     * Create a templr webpage from the specified template filename
+     * 
+     * @param string $template Filename of template to load
+     * @param array $opts Extra otions for the webpage
+     */
     public function __construct($template = NULL, $opts = []) {
         $template = $template ? : WebPage::$default_template_name;
         $ext = @$opts['ext'] ? : TEMPLR_EXT;
         $filename = "";
 
-        self::$template_path = array_merge(Templr::ViewPath(), Templr::TemplatePath());
-        foreach (self::$template_path as $dir) {
-            $f = $dir . $template . $ext;
-//            echo "checking $f<br/>";
-            if (file_exists($f)) {
-                $filename = $f;
-                $this->_template_root_path = $dir;
-                break;
+        // check first character for directory separator - absolute path
+        if ($template[0] === DIRECTORY_SEPARATOR) {
+            $filename = $template;
+            $this->_template_root_path = dirname($filename);
+        } else {
+            // search through the template path for files that match the name
+            self::$template_path = \array_merge(Templr::ViewPath(), Templr::TemplatePath());
+            foreach (self::$template_path as $dir) {
+                $f = $dir . $template . $ext;
+                if (file_exists($f)) {
+                    $filename = $f;
+                    $this->_template_root_path = $dir;
+                    break;
+                }
             }
         }
 
+        // We could not find the file - print an error
         if (!$filename) {
+            // TODO : Throw an exception object containing info on how to render an error page
             var_dump(WebPage::$template_path);
             echo "<br/>";
             print "error : Could not find file " . $template . " in WebPage template path ({$f}).";
             exit(1);
         }
 
-//        $this->template_root_path = TEMPLR_ROOT;
-//        $this->root_name = $this->template_root_path . $template . TEMPLR_EXT;
+        // the root of this file
         $this->_root_name = $filename;
 
+        // we should remove these soon - too specific
         $this->_data['styles'] = [];
         $this->_data['scripts'] = [];
     }
 
     /**
-     * Prints and returns the entired rendered webpage as a string by 
+     * Look through root file for any required files - loading, building
+     *   and caching each one until done.
+     */
+    protected function _BuildTemplateTree() {
+        
+    }
+
+
+    /**
+     * Prints and returns the entire rendered webpage as a string by 
      *  rendering the root file
      * 
      * @param bool $print Determines whether to automatically print the webpage to stdout or not
      * 
      * @return string
      */
-    public function render($print = true) {
-        // It could be possible for a script to call render on the page, while
-        //  page is already rendering, this will prevent such infinite loops
+    public function Render($print = true) {
+        // It could be possible for a script to call render on the page, while page
+        //  is already rendering, which is bad. This lock will prevent such infinite loops.
         if ($this->renderlock) {
             return;
         }
         $this->renderlock = true;
 
+        // something really bad happened - file deleted while parsing?
         if (!file_exists($this->_root_name)) {
             die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
@@ -96,6 +120,8 @@ class WebPage implements \ArrayAccess {
     protected function render_file($file) {
         // required variable holding value '1' for preg_match
         static $one = 1;
+        
+        // TODO : Check for cached copy of the file
 
         // $string contains the rendered page
         $string = $this->read_file($file);
