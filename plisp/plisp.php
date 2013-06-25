@@ -17,8 +17,9 @@ class PLISP {
 
 
     public function __construct() {
+
     }
-    
+
     /**
      * 
      * @param string $str

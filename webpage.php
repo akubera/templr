@@ -9,6 +9,13 @@
 
 namespace templr;
 
+function simple_lisp($lisp) {
+     print "Simple lisp : $lisp\n";
+     $matches = [];
+     preg_match("_\(([^ \)]+)[^\)]*\)_", $lisp, $matches);
+     return "<{$matches[1]}>";
+}
+
 class WebPage implements \ArrayAccess {
 
     static $default_template_name = "index";
@@ -27,6 +34,7 @@ class WebPage implements \ArrayAccess {
      * @param array $opts Extra otions for the webpage
      */
     public function __construct($template = NULL, $opts = []) {
+
         $template = $template ? : WebPage::$default_template_name;
         $ext = @$opts['ext'] ? : TEMPLR_EXT;
         $filename = "";
@@ -94,11 +102,16 @@ class WebPage implements \ArrayAccess {
         if (!file_exists($this->_root_name)) {
             die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
+        
+        print "rendering " . $this->_root_name . "\n";
 
-        $str = $this->render_file($this->_root_name);
+        // get the contents of the file
+        $str = $this->load_file($this->_root_name);
 
-        // Replace all %% with WEB_ROOT
+        // Replace all %% with TEMPLR_WEB_ROOT
+        $str = str_replace("{%%}", "%%", $str);
         $str = str_replace("%%", TEMPLR_WEB_ROOT, $str);
+
         // Replace all escaped %% 
         $str = str_replace("%\%", "%%", $str);
 
@@ -106,8 +119,33 @@ class WebPage implements \ArrayAccess {
         if ($print) {
             print $str;
         }
+
+        // unlock the thing
         $this->renderlock = false;
         return $str;
+    }
+    
+    protected function load_file($filename) {
+        // $string contains the rendered page
+        $string = $this->read_file($filename);
+
+        // Find all blocks using regex
+        $block_regex = "/^(\[[^:]{0,10}(?:[^\]]+)+\])/";
+
+        $blocks = array_map(function ($str) {return trim($str, "\n\r");}, 
+                      preg_split(Block::$id_matcher, $string, -1, PREG_SPLIT_DELIM_CAPTURE));
+
+        // TODO : Handle malformed files 
+        //   $Blocks should have odd number of entries - header and block-title pairs
+
+        $header = $this->Process_Header(array_shift($blocks));
+
+        $block_list = [];
+
+        while (count($blocks)) {
+          // shift the first and second items in blocks to 
+          $block_list[] = new Block(array_shift($blocks), array_shift($blocks));
+        }
     }
 
     /**
@@ -184,7 +222,111 @@ class WebPage implements \ArrayAccess {
             include $filename;
             return ob_get_clean();
         }
+        print "no file\n";
         return "";
+    }
+
+    protected function Process_Header($header) {
+        // Look for plisp 
+        foreach(explode("\n", $header) as $line) {
+            $backup_line = $line;
+            // double all underscores:
+            $underscores = 0;
+            $line = str_replace("_", "__", $line, $underscores);
+
+            print $line . " ($underscores)\n\n";
+            
+            // number of subcommands
+            $subcommand_count = 0;
+            $subcommands = [];
+
+            $match = [];
+            $offset = -1;
+
+            // begin looping through finding strings lisp commands
+            do {
+                // match a simple command (...) - no ( between
+                $regex = "/(\([^\)\(]+\))/";
+                preg_match($regex, $line, $match, PREG_OFFSET_CAPTURE);
+//                var_dump(preg_split($regex, $line, -1, PREG_OFFSET_CAPTURE));
+                $subcommand = $match[0][0];
+                $offset = $match[0][1];
+                if ($subcommand === NULL) {
+                    throw new \Exception("Malformed LISP! Error around $backup_line", 500);
+                }
+
+                $sub_id = "_" . ($subcommand_count++);
+                $line = substr_replace($line, $sub_id, $offset, strlen($subcommand));
+                $subcommands[$sub_id] = $subcommand;
+//              print "=======\n$line\n";
+//              var_dump($subcommands);
+            } while ($offset !== 0);
+
+            $safe = 0;
+            // No errors! good
+            $done = [];
+            while (count($subcommands) && $safe++ < 100) {
+                $var = [];
+                
+                // Get first key and value
+                reset($subcommands);
+                $key_0 = key($subcommands);
+
+                $key = $key_0;
+                
+                if ($key === 0) {
+                    print "Zero :::\n:::\n";
+                    var_dump($subcommands);
+                    print ":::\n\n";
+                    }
+
+                // Start goose chase for next 'simple' LISP command
+                do {
+                    $next = $subcommands[$key];
+                    print "\n($key) Searching : '$next'\n";
+                    preg_match("/_[\d]+/", $next, $var);
+                    
+                    
+                    // Great! Simple lisp
+                    if (count($var) === 0) {
+                        // if there are no underscores - skip this step
+                        if ($underscores !== 0) {
+                            // reset all double underscores 
+                            $tmp_u = 0;
+                            $next = str_replace("__", "_", $next, $tmp_u);
+                            $underscores -= $tmp_u;
+                        }
+                        
+                        // process simple lisp
+                        $done[$key] = simple_lisp($next);
+                        
+                        // remove from $subcommands
+                        unset ($subcommands[$key]);
+                        
+                        // we are done
+                        break;
+
+                    } else {
+                        // Find the offending variables
+                        print "($key) Need to load : " . $var[0] . "\n";
+
+                        // We have already processed and stored the missing function
+                        if (key_exists($var[0], $done)) {
+                            print " Found : {$var[0]} => {$done[$var[0]]}\n";
+                            $subcommands[$key] = str_replace($var[0], $done[$var[0]], $next);
+                            break;
+                        } 
+                        // Need to search for it
+                        else {
+                            $key = $var[0];
+                        }
+                    }
+                                        
+                } while ($key !== 0);
+
+            }
+            
+        }
     }
 
     public function AddStyle($style) {

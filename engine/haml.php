@@ -7,7 +7,11 @@ namespace templr\engine;
  *
  * @author andrew
  */
-class Haml extends AbstractEngine  {
+class HamlEngine extends AbstractEngine  {
+
+    public function Process($content) {
+        return "<$content>";
+    }
 
     
 }

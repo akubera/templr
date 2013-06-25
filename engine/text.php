@@ -17,7 +17,7 @@ namespace templr\engine;
  *
  * @author Andrew Kubera <andrewkubera@gmail.com>
  */
-class text extends AbstractEngine {
+class TextEngine extends AbstractEngine {
 
     
 }
