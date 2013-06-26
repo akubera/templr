@@ -14,6 +14,7 @@ class Extend extends \templr\plisp\PlispFunction
     public function exec($args) {
         foreach ($args as $filename) {
           print "Loading {$filename}\n";
+          $next = templr\Templr($filename);
         }
         
         return new \templr\plisp\Plist();

@@ -32,7 +32,7 @@ class Math extends \templr\plisp\PlispFunction {
         return false;
     }
 
-    public static CreateWithCommand($func) {
+    public static function CreateWithCommand($func) {
       $math = new Math();
       return $math->SetCommand($func) ? $math : null;
     }
