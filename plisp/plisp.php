@@ -102,6 +102,7 @@ class PLISP {
         $line = substr_replace($line, $res, $offset, strlen($subcommand));
 
       } while ($offset !== 0);
+      
     }
 
     protected function EvalSingleLine($line) {

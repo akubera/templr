@@ -26,7 +26,7 @@ abstract class PlispFunction
          $res = new $classname();
       } else {
         // check if it's stored in the math class
-        $res = PlispFunction::LoadMathClass($name);
+        $res = commands\Math::CreateWithCommand($name);
       }
 
       if ($res === null) {
@@ -35,13 +35,6 @@ abstract class PlispFunction
       
       
       return $res;
-    }
-    
-    static protected function LoadMathClass($name) {
-      $math = new commands\Math();
-        if ($math->SetCommand($name)) {
-          return $math;
-        }
     }
     
     

@@ -32,9 +32,16 @@ class Math extends \templr\plisp\PlispFunction {
         return false;
     }
 
+    public static CreateWithCommand($func) {
+      $math = new Math();
+      return $math->SetCommand($func) ? $math : null;
+    }
+
     public function exec($args) {
         $c = __namespace__.'\\'.$this->c_command;
-        return $c($args);// "math exec : {$this->c_command} ".implode(' ', $args)}."\n";
+
+        // only try to run $c if the function exists
+        return function_exists($c) ? $c($args) : null;
     }
 }
 
