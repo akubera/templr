@@ -9,13 +9,6 @@
 
 namespace templr;
 
-function simple_lisp($lisp) {
-     print "Simple lisp : $lisp\n";
-     $matches = [];
-     preg_match("_\(([^ \)]+)[^\)]*\)_", $lisp, $matches);
-     return "<{$matches[1]}>";
-}
-
 class WebPage implements \ArrayAccess {
 
     static $default_template_name = "index";
@@ -227,6 +220,11 @@ class WebPage implements \ArrayAccess {
     }
 
     protected function Process_Header($header) {
+        $plisp_env = new plisp\Plisp($this);
+        
+        $plisp_env->Evaluate($header);
+        return;
+
         // Look for plisp 
         foreach(explode("\n", $header) as $line) {
             $backup_line = $line;
@@ -270,22 +268,13 @@ class WebPage implements \ArrayAccess {
                 
                 // Get first key and value
                 reset($subcommands);
-                $key_0 = key($subcommands);
-
-                $key = $key_0;
-                
-                if ($key === 0) {
-                    print "Zero :::\n:::\n";
-                    var_dump($subcommands);
-                    print ":::\n\n";
-                    }
+                $key = key($subcommands);
 
                 // Start goose chase for next 'simple' LISP command
                 do {
                     $next = $subcommands[$key];
                     print "\n($key) Searching : '$next'\n";
                     preg_match("/_[\d]+/", $next, $var);
-                    
                     
                     // Great! Simple lisp
                     if (count($var) === 0) {
@@ -298,11 +287,11 @@ class WebPage implements \ArrayAccess {
                         }
                         
                         // process simple lisp
-                        $done[$key] = simple_lisp($next);
+                        $done[$key] = $plisp_environment->Evaluate($next);
                         
                         // remove from $subcommands
                         unset ($subcommands[$key]);
-                        
+
                         // we are done
                         break;
 
