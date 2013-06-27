@@ -32,8 +32,8 @@ class Math extends \templr\plisp\PlispFunction {
         return false;
     }
 
-    public static function CreateWithCommand($func) {
-      $math = new Math();
+    public static function CreateWithCommand($plisp, $func) {
+      $math = new Math($plisp);
       return $math->SetCommand($func) ? $math : null;
     }
 

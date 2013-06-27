@@ -12,11 +12,14 @@ namespace templr\plisp\commands;
 class Extend extends \templr\plisp\PlispFunction
 {
     public function exec($args) {
+        $files = [];
         foreach ($args as $filename) {
-          print "Loading {$filename}\n";
-          $next = templr\Templr($filename);
+          if (!isset($files[$filename])) {
+            print "Loading {$filename}\n";
+            $files[$filename] = new \templr\Webpage($filename);
+          }
         }
         
-        return new \templr\plisp\Plist();
+        return new \templr\plisp\Plist([]);
     }
 }
