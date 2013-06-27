@@ -5,15 +5,13 @@
 
 namespace templr\plisp;
 
-global $plisp_registry;
-$plisp_registry = [];
-
 class PLISP {
 
     const regex = "/^\(((?>[^()]+)|(?:R))*\) *$/"; // (function arg1 arg2)
 
     protected $prefix = "";
     protected $literal_strings = [];
+    protected $stored_lists = [];
     protected $variables = [];
 
     public function __construct($obj) {
@@ -34,9 +32,6 @@ class PLISP {
          return null;
       }
       
-      // remove all extraneous whitespace
-      $string = preg_replace('/ +/', ' ', $string);
-
       // ensure number of ( matches number of )
       $l_count = substr_count($string, '(');
       $r_count = substr_count($string, ')');
@@ -44,11 +39,18 @@ class PLISP {
       if ($l_count !== $r_count) {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
-
-      $string = $this->RecursiveEval("(all $string)");
+      
+      $lists = $this->BuildLists("(all $string)");
+      $string = $this->RecursiveEval("$lists");
       print "End : $string";
     }
-    
+
+    //
+    protected function BuildLists($str) {
+        $res = plist::GenerateFromString($str, $this);
+        return $res;
+    }
+
     protected function RemoveStringLiterals($str) {
 
       $begin = strpos($str, '"');
@@ -86,12 +88,12 @@ class PLISP {
       while (preg_match($regex, $escaped, $matches, PREG_OFFSET_CAPTURE)) {
           $quote = $matches[1];
 
-          // create a new string literal id
-          $id = uniqid("&STRL");
-          
           // set the literal string to whatever is inside the quotes - replace all escaped things
           //  we set any \" in the original string to " here!
-          $this->literal_strings[$id] = str_replace('&&', '&', str_replace(" &ESCAPEDQUOTE&", '"', substr($quote[0],1,-1)));
+          $unescaped = str_replace('&&', '&', str_replace(" &ESCAPEDQUOTE&", '"', substr($quote[0],1,-1)));
+
+          // create a new string literal id
+          $id = $this->RegisterId($unescaped);
           $escaped = substr_replace($escaped, " $id", $quote[1], strlen($quote[0]));
       }
 
@@ -154,7 +156,35 @@ class PLISP {
         print " => '$res'\n$txt";
         return "$res";
     }
+    
+    public function RegisterId($obj) {
+      $id = null;
 
+      // create and store a literal string
+      if (is_string($obj)) {
+          $id = uniqid("&STR");
+          $this->literal_strings[$id] = $obj;
+      } else 
+
+      // create and store a plisp plist 
+      if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
+          $id = uniqid("&LST");
+          $this->stored_lists[$id] = $obj;
+          print "Registering PLIST id! $id\n";
+      } 
+      
+      return $id;
+    }  
+
+    //
+    // When given some identifier in a plisp - ensure 
+    //  all escaped characters are back to normal
+    // Because we use a single '&' to identify a reference, they were doubled 
+    //  upon initial reading of the string, and now must be halved
+    //
+    public function CleanIdentifier($item) {
+        return str_replace("&&", "&", $item);
+    }
     /**
      * 
      * @param string $str
