@@ -16,7 +16,8 @@ class Extend extends \templr\plisp\PlispFunction
         foreach ($args as $filename) {
           if (!isset($files[$filename])) {
             print "Loading {$filename}\n";
-            $files[$filename] = new \templr\Webpage($filename);
+            $wp = new \templr\Webpage($filename);
+            $files[$filename] = $wp->Render();
           }
         }
         

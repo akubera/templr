@@ -33,6 +33,10 @@ class PLISP {
          echo "Error : unknown command : '{$word}'. Did you mean ({$word} ...) \n";
          return null;
       }
+      
+      // remove all extraneous whitespace
+      $string = preg_replace('/ +/', ' ', $string);
+
       // ensure number of ( matches number of )
       $l_count = substr_count($string, '(');
       $r_count = substr_count($string, ')');
@@ -41,10 +45,8 @@ class PLISP {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
 
-//       print "Evaluating $string : \n";
-
-      $line = $this->RecursiveEval($string);
-      print "End : $line";
+      $string = $this->RecursiveEval("(all $string)");
+      print "End : $string";
     }
     
     protected function RemoveStringLiterals($str) {
@@ -105,6 +107,8 @@ class PLISP {
       $line = $str;
 
       do {
+        print "\n\nLINE: $line\n\n";
+
         // Get inner contents of the command
         preg_match("/\([^\)\(]+\)/", $line, $match, PREG_OFFSET_CAPTURE);
         
@@ -125,10 +129,13 @@ class PLISP {
         }
        print "RecursiveEval: $subcommand\n";
         $res = $this->RecursiveEval($subcommand);
+        print "\n\nRES: $res\n\n";
+
         $line = substr_replace($line, $res, $offset, strlen($subcommand));
 
       } while ($offset !== 0);
-      
+              print "\n\nEND WHILE LINE: $line\n\n";
+
     }
 
     protected function EvalSingleLine($line) {
@@ -137,7 +144,7 @@ class PLISP {
         $underscores = 0;
         $d_under = str_replace("_", "__", $line, $underscores);
 
-        $args = explode(' ', $line);  // Plist::GenerateFromString($line);
+        $args = array_filter(explode(' ', $line), 'strlen'); // Plist::GenerateFromString($line);
 
         $command = array_shift($args);
         ob_start();
@@ -169,11 +176,11 @@ class PLISP {
     }
     
     public function get($name) {
-         if (strpos($name, '&STRL') === 0) {
-          echo  "FOUND LITERAL STRING : '{$this->literal_strings[$name]}'\n";
+        if (strpos($name, '&STRL') === 0) {
+            echo  "FOUND LITERAL STRING : '{$this->literal_strings[$name]}'\n";
             return $this->literal_strings[$name];
         } 
-      return isset($this->variables[$name]) ? $this->variables[$name] : null;
+        return isset($this->variables[$name]) ? $this->variables[$name] : null;
     }
     
 }

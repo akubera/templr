@@ -11,15 +11,15 @@ class Plist implements \ArrayAccess {
     protected $_data = [];
     
     function __construct($list = []) {
-      if (is_array($list)) {
-        $this->_data = $list;
-      } else {
-        $this->_data = [$list];
+        if (is_array($list)) {
+          $this->_data = $list;
+        } else {
+          $this->_data = [$list];
         }
     }
     
     function __tostring() {
-      $str = implode(' ', $this->_data);
+      $str = implode(' ', \array_map('trim', $this->_data));
       return $str;
     }
     
@@ -29,7 +29,7 @@ class Plist implements \ArrayAccess {
     
     
     static function GenerateFromString($str) {
-        return new Plisp(explode(' ', $str));
+        return new Plisp(array_filter(explode(' ', $str), 'strlen'));
     }
     
     public function Slice(int $offset, int $length = NULL) {

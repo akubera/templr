@@ -31,6 +31,9 @@ class WebPage implements \ArrayAccess {
         $template = $template ? : WebPage::$default_template_name;
         $ext = @$opts['ext'] ? : TEMPLR_EXT;
         $filename = "";
+        
+        // set some default data references
+        $this->_data['session'] = &$_SESSION;
 
         // check first character for directory separator - absolute path
         if ($template[0] === DIRECTORY_SEPARATOR) {
