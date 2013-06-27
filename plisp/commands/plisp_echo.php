@@ -12,16 +12,13 @@ namespace templr\plisp\commands;
 class plisp_echo extends \templr\plisp\PlispFunction {
 
     public function exec($args) {
+      $str = "";
         foreach ($args as $arg) {
-          if ($arg[0] === '$' || $arg[0] === '&') {
-              echo $this->plisp->get($arg);
-          } else {
-            echo $arg;
-          }
-            echo " ";
+          $str .= $arg();
         }
+        echo $str . "\n";
 //         echo implode(' ' , $arg);
-        return new \templr\plisp\Plist();
+        return [];
     }
 
 }

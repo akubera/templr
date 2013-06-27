@@ -13,8 +13,12 @@ class All extends \templr\plisp\PlispFunction
     public function exec($args) {
         $result = [];
         foreach ($args as $next) {
-          $result[] = $next->Eval();
+          if (is_callable($next)) {
+            $result[] = $next();
+          } else {
+            $result[] = $this->plisp->magic($next);
+          }
         }
-        return new \templr\plisp\Plist($result);
+        return count($result) === 1 ? $result[0] : $result;
     }
 }

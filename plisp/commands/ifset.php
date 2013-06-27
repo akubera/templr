@@ -12,6 +12,10 @@ namespace templr\plisp\commands;
 class Ifset extends \templr\plisp\PlispFunction
 {
     public function exec($args) {
-        return new \templr\plisp\Plist(false);
+        $var = $args[0]();
+        if ($this->plisp->get($var)) {
+          return $args[1]();
+        }
+        return null;
     }
 }

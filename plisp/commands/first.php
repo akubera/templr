@@ -13,6 +13,6 @@ namespace templr\plisp\commands;
 class First extends \templr\plisp\PlispFunction
 {
     public function exec($args) {
-        return new \templr\plisp\Plist($args[0]);
+        return $args[0]();
     }
 }

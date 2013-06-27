@@ -21,19 +21,20 @@ abstract class PlispFunction
                                     "error" => "plisp_error",
                                   "foreach" => "plisp_each"];
 
-    abstract public function exec($args);
+    abstract public function Exec($args);
     protected $plisp = null;
     
     
     public function __construct($plisp) {
       $this->plisp = $plisp;
     }  
-
-    public function getHtml($template) {
-      
+    
+    public function __invoke($args) {
+        return $this->Exec($args);
     }
     
     static public function Create($plisp, $name) {    
+        print "creating plispfunction $name\n";
         $res = null;
 
         // check if $name provided is an alias to a function - replace with that name
@@ -60,6 +61,11 @@ abstract class PlispFunction
         }
 
         return $res;
+    }
+    
+    static public function CreateAndRunList($plist) {
+        $f = PlispFunction::Create($plist->plisp, $plist->head);
+        return $f($plist);
     }
 
 }

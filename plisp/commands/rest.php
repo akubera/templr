@@ -13,6 +13,10 @@ namespace templr\plisp\commands;
 class Rest extends \templr\plisp\PlispFunction
 {
     public function exec($args) {
-        return new \templr\plisp\Plist(array_slice($args, 1));
+        $result = ['all'];
+        for ($i = 1; $i < count($args); $i++) {
+          $result[] = $args[$i]();
+        }
+        return new \templr\plisp\plist($result);
     }
 }

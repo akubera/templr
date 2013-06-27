@@ -13,7 +13,9 @@ namespace templr\plisp\commands;
 class plisp_assign extends \templr\plisp\PlispFunction {
   public function exec($arg) {
 //     print "\nsetting  $arg[0] to  $arg[1] \n";
-    $this->plisp->set($arg[0], $arg[1]);
-    return  $arg[1];
+    $A0 = $arg[0]();
+    $A1 = $arg[1]();
+    $this->plisp->set($A0, $A1);
+    return $A1;
   }
 }

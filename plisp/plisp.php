@@ -14,6 +14,12 @@ class PLISP {
     protected $stored_lists = [];
     protected $variables = [];
 
+    static protected $string_id_prefix = "&STR";
+    static protected $list_id_prefix = "&LST";
+
+    protected $double_ampersands = true;
+    
+
     public function __construct($obj) {
       $this->obj = $obj;
     }
@@ -39,10 +45,17 @@ class PLISP {
       if ($l_count !== $r_count) {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
-      
-      $lists = $this->BuildLists("(all $string)");
-      $string = $this->RecursiveEval("$lists");
-      print "End : $string";
+
+      // Build the master list - which is a list that runs each command given 
+      //  in the initial plisp init string, using plisp command 'all'
+      $master_list = $this->BuildLists("(all $string)");
+
+      // run the master list
+      $string = $master_list(); // $this->RecursiveEval($master_list);
+
+      // print the end result
+      print "End : ";
+      var_dump($string);
     }
 
     //
@@ -54,6 +67,7 @@ class PLISP {
     protected function RemoveStringLiterals($str) {
 
       $begin = strpos($str, '"');
+      $str = str_replace("&", "&&", $str);
 
       // cool - no strings to worry about
       if ($begin === false) {
@@ -61,7 +75,7 @@ class PLISP {
       }
 
       // Remove pesky escaped backslashes by doulbing underscores and ampersands - then re-writing \\ as \_
-      $escaped = str_replace("\\\\", "\\_", str_replace("&", "&&", str_replace("_", "__", $str)));
+      $escaped = str_replace("\\\\", "\\_", str_replace("_", "__", $str));
 
 //       $escaped = $str;
 //       $replace = ["_" => "__", "&" => "&&", "\\\\" => "\\_"];
@@ -90,7 +104,7 @@ class PLISP {
 
           // set the literal string to whatever is inside the quotes - replace all escaped things
           //  we set any \" in the original string to " here!
-          $unescaped = str_replace('&&', '&', str_replace(" &ESCAPEDQUOTE&", '"', substr($quote[0],1,-1)));
+          $unescaped = str_replace('&&', '&', str_replace(" &ESCAPEDQUOTE&", '"', $quote[0]));
 
           // create a new string literal id
           $id = $this->RegisterId($unescaped);
@@ -103,7 +117,11 @@ class PLISP {
       return $escaped;
     }
 
-    private function RecursiveEval($str) {
+    private function RecursiveEval($list) {
+      return $list->run();
+
+      print "found id : " . $this->FindId($list) . "\n";
+
       $match = [];
       $offset = 0;
       $line = $str;
@@ -157,33 +175,20 @@ class PLISP {
         return "$res";
     }
     
-    public function RegisterId($obj) {
-      $id = null;
-
-      // create and store a literal string
-      if (is_string($obj)) {
-          $id = uniqid("&STR");
-          $this->literal_strings[$id] = $obj;
-      } else 
-
-      // create and store a plisp plist 
-      if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
-          $id = uniqid("&LST");
-          $this->stored_lists[$id] = $obj;
-          print "Registering PLIST id! $id\n";
-      } 
-      
-      return $id;
-    }  
-
     //
     // When given some identifier in a plisp - ensure 
     //  all escaped characters are back to normal
     // Because we use a single '&' to identify a reference, they were doubled 
     //  upon initial reading of the string, and now must be halved
     //
-    public function CleanIdentifier($item) {
-        return str_replace("&&", "&", $item);
+    public function Clean($item) {
+        if ($item === "null") {
+          return null;
+        }
+        if ($this->double_ampersands) {
+          $item = str_replace("&&", "&", $item);
+        }
+        return $item;
     }
     /**
      * 
@@ -204,13 +209,85 @@ class PLISP {
         $this->variables[$name] = $this->get($val);
       }
     }
-    
+
+    public function RegisterId($obj) {
+      $id = null;
+
+      // create and store a literal string
+      if (is_string($obj)) {
+          $id = uniqid(plisp::$string_id_prefix);
+          $this->literal_strings[$id] = &$obj;
+      } else 
+
+      // create and store a plisp plist 
+      if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
+          $id = uniqid(plisp::$list_id_prefix);
+          $this->stored_lists[$id] = &$obj;
+      }
+      return $id;
+    }
+
+
     public function get($name) {
-        if (strpos($name, '&STRL') === 0) {
-            echo  "FOUND LITERAL STRING : '{$this->literal_strings[$name]}'\n";
-            return $this->literal_strings[$name];
-        } 
-        return isset($this->variables[$name]) ? $this->variables[$name] : null;
+      if (is_null($name)) {
+        return null; // function(){return null;};
+      }
+      
+      if (is_callable($name)) {
+        $name = $name();
+      }
+
+       print "Looking for '$name'... ";
+
+        $res = null;
+
+        if (null !== ($res = $this->GetReference($name))) {
+           print "found '$res'!\n";
+           
+           if (is_string($res)) {
+           
+              $res = function () use ($res) { return $res; };
+           }
+           return $res;
+        }
+        if (isset($this->variables[$name])) {
+          $res = $this->variables[$name] ;
+        } else if ($name[0] == "\$") {
+          $res = null; // function(){return null;};;
+        } else {
+          $res = $this->Clean($name);
+        }
+           print "found '$res'\n";
+
+        return $res;
+    }
+
+    public function GetReference($id) {
+      // we have a string
+      if (strpos($id, plisp::$string_id_prefix) === 0) {
+          return $this->literal_strings[$id];
+      } else 
+      
+      // we have a list
+      if (strpos($id, plisp::$list_id_prefix) === 0) {
+          return $this->stored_lists[$id];
+      }
+      
+      return null;
+    }
+    
+    public function FindId($obj) {
+
+      // create and store a literal string
+      if (is_string($obj)) {
+          $id = array_search($obj, $this->literal_strings, true);
+      } else 
+      
+      if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
+          $id = array_search($obj, $this->stored_lists, true);
+      } 
+      
+      return $id;
     }
     
 }

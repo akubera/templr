@@ -7,27 +7,40 @@
 
 namespace templr\plisp;
 
-class Plist implements \ArrayAccess {
+class Plist implements \ArrayAccess, \Iterator, \Countable {
     // a static reference to a plisp environment - there should only be one, 
     //  but we optionally leave this here to allow more.
     static protected $recent_plisp = null;
 
-    // the held data held
+    // the raw init array;
+    protected $_data = [];
+
+    // the command
+    public $head = '';
+
+    // the evaluated objects
     protected $_args = [];
+    
+    public $plisp = null;
+    
+    protected $_index = 0;
     
     function __construct($list = [], $plisp = null) {
         // we have a new recent plisp
         if (is_a($plisp, "\templr\plisp\plisp")) {
           Plist::$recent_plisp = $plisp;
         }
-        print "building from : $list\n";
 
         // set the plisp member to the most recent plisp, perhaps just set a few lines before
         $this->plisp = Plist::$recent_plisp;
 
-        if (is_array($list)) {
+        if (is_numeric($list) || is_int($list) || is_float($list)) {
+          die ("Initiating plist with number : $list \n");        
+        } else if (is_array($list)) {
+          print "building from list : ". implode(",", $list)."\n";
           $this->_build_from_array($list);
         } else if (is_string($list)) {
+          print "building from string : $list\n";
           $this->_build_from_array(explode(' ', $list));        
         } else {
           die ("Unkown plist initiating object : " . get_class($list) . "\n");
@@ -36,23 +49,29 @@ class Plist implements \ArrayAccess {
     }
     
     private function _build_from_array($list) {
+        assert(!is_numeric($list[0]), "building plist with number head");
         assert(count($list) !== 0, "Attempting to build PLIST from empty list!");
+        $this->_data = $list;
 
-        // remove first item from list
-        $head = array_shift($list);
-        $this->_data[] = $head;
-        foreach ($list as $token) {
-            if (is_string($token)) {
-            
-                // this is a reference of some kind
-                if ($token[0] === '&' && @$token[1] !== '&') {
-                }
-            } else if(is_strong()) {
-            
-            }
-            
+        // remove first item from list and store as 'head'
+        $this->head = array_shift($list);
+
+        // run head if necessary
+        while ($this->head[0] === '&') {
+          $x = $this->plisp->Get($this->head);
+          $this->head = $x();
         }
+        // don't bother evaluating yet - only do what you have to!
+        $this->_args = $list;
     }
+    
+    public function __invoke() {
+        // evaluate this list
+//         $f = PlispFunction::Create($this->plisp, $this->head);
+//         return $f->Exec($this);
+        return PlispFunction::CreateAndRunList($this);
+    }
+    
     
     function __tostring() {
       $str = implode(' ', \array_map('trim', $this->_data));
@@ -75,9 +94,9 @@ class Plist implements \ArrayAccess {
 
       // set it and forget it!
       PList::SetPlisp($plisp);
-      PList::RecursiveCreation($str);
+      $res = PList::RecursiveCreation($str);
 
-        return new Plist(array_filter(explode(' ', $str), 'strlen'));
+        return $res;
     }
 
     static protected function RecursiveCreation($str, $plisp = null) {
@@ -116,23 +135,61 @@ class Plist implements \ArrayAccess {
     public function Slice(int $offset, int $length = NULL) {
       return new Plist(array_slice($this->_data, $offset, $length));
     }
-    
+
     // Array Functions
-    
+
     public function offsetSet($offset, $value) {
         if (is_null($offset)) {
-            $this->_data[] = $value;
+            $this->_args[] = $value;
         } else {
-            $this->_data[$offset] = $value;
+            $this->_args[$offset] = $value;
         }
     }
     public function offsetExists($offset) {
-        return isset($this->_data[$offset]);
+        return isset($this->_args[$offset]);
     }
     public function offsetUnset($offset) {
-        unset($this->_data[$offset]);
+        unset($this->_args[$offset]);
     }
+
+    // get item at '$offset'
     public function offsetGet($offset) {
-        return isset($this->_data[$offset]) ? $this->_data[$offset] : null;
+        $res = isset($this[$offset]) ? $this->_args[$offset] : null;
+        if (is_numeric($res)) {
+            $res = floatval($res);
+        } else 
+        if ( $x = $this->plisp->Get($res) ) {
+          if (is_callable($x)) { 
+            return $x;
+          }
+          $res = $x;
+        }
+        return function() use ($res) {return $res;};
     }
+    
+    
+    // iterator functions
+    public function rewind() {
+      $this->_index = 0;
+    }
+    
+    public function current() {
+      return $this[$this->_index];
+    }
+    public function key(){
+      return $this->_index;
+    }
+
+    public function next(){
+        return isset($this[++$this->_index]) ?  $this[$this->_index] : false;
+    }
+    
+    public function valid() {
+      return isset($this[$this->_index]);// ($this->_index < count($this->_args));// ;
+    }
+    
+    public function count() {
+       return count($this->_args);
+    }
+
 }

@@ -39,7 +39,7 @@ class Math extends \templr\plisp\PlispFunction {
 
     public function exec($args) {
         $c = __namespace__.'\\'.$this->c_command;
-
+        print "func $c\n";
         // only try to run $c if the function exists
         return function_exists($c) ? $c($args) : null;
     }
@@ -49,7 +49,7 @@ class Math extends \templr\plisp\PlispFunction {
 function plisp_add($list) {
     $sum = 0;
     foreach ($list as $el) {
-        $sum += $el;// $el->eval();
+        $sum += $el();// $el->eval();
     }
     return $sum;
 }

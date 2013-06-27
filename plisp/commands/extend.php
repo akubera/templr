@@ -11,16 +11,34 @@ namespace templr\plisp\commands;
 
 class Extend extends \templr\plisp\PlispFunction
 {
+    static $loaded_files = [];
+
     public function exec($args) {
-        $files = [];
-        foreach ($args as $filename) {
-          if (!isset($files[$filename])) {
-            print "Loading {$filename}\n";
-            $wp = new \templr\Webpage($filename);
-            $files[$filename] = $wp->Render();
+
+//         for ($i = 0; $i < count($args); $i++) {
+//             $arg = $args[$i];
+      foreach ($args as $arg) {
+          $filename = $arg();
+          if (is_array($filename)) {
+            foreach ($filename as $fname) {
+              $this->load_file($fname);
+            }
+          } else if (is_string($filename)) {
+            $this->load_file($filename);
+          } else {
+            $this->load_file("$filename");
           }
         }
-        
-        return new \templr\plisp\Plist([]);
+        return [true]; //new \templr\plisp\Plist();
+    }
+    
+    public function load_file($filename) {
+        $filename = trim($filename, " \t\n\"'");
+        if (isset(Extend::$loaded_files[$filename])) {
+          return;
+        }
+        print "Loading {$filename}\n";
+        $wp = new \templr\Webpage($filename);
+        Extend::$loaded_files[$filename] = $wp->Render();
     }
 }

@@ -13,11 +13,21 @@ namespace templr\plisp\commands;
 class plisp_if extends \templr\plisp\PlispFunction {
 
     public function exec($args) {
-      $cmd = "return (". $args[0] . " ? true : false);";
+      $ev = $args[0]();
+      if (is_null($ev)) {
+        return $args[2]();
+      }
+      
+      $to_str = is_array($ev) ? '['.implode(',', $ev).']' :  "$ev";
+      $eval_str = "return (" .$to_str . " or 0);";
+
+      return (eval($eval_str) ? $args[1]() : $args[2]());
+
+//       $cmd = "return (". $args[0] . " ? true : false);";
 //         echo "\n\nTesting '$cmd' => '{$args[1]}' '{$args[2]}'\n\n";
 //         echo "::". eval($cmd) . "\n |" . (eval($cmd) ? $args[1] : $args[2]) . "\n\n";
         
-        return (eval($cmd)) ? $args[1] : $args[2]; // eval($args[0]. ";") ? $args[1] : $args[2];
+//         return (eval($cmd)) ? $args[1] : $args[2]; // eval($args[0]. ";") ? $args[1] : $args[2];
     }
 
 }
