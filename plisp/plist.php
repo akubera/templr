@@ -24,6 +24,7 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
     public $plisp = null;
     
     protected $_index = 0;
+    protected $_is_executable = true;
     
     function __construct($list = [], $plisp = null) {
         // we have a new recent plisp
@@ -34,27 +35,33 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
         // set the plisp member to the most recent plisp, perhaps just set a few lines before
         $this->plisp = Plist::$recent_plisp;
 
-        if (is_numeric($list) || is_int($list) || is_float($list)) {
-          die ("Initiating plist with number : $list \n");        
+        if (is_numeric($list) or is_null($list)) {
+//           die ("Initiating plist with number : $list \n");
+          $this->_build_from_array([$list]);        
         } else if (is_array($list)) {
-          print "building from list : ". implode(",", $list)."\n";
+          print "building from list : [". implode(",", $list)."]\n";
           $this->_build_from_array($list);
         } else if (is_string($list)) {
-          print "building from string : $list\n";
+          print "building from string : '$list'\n";
           $this->_build_from_array(explode(' ', $list));        
         } else {
-          die ("Unkown plist initiating object : " . get_class($list) . "\n");
+          die ("Unkown plist initiating object of class '" . get_class($list) . "'\n");
         }
         $this->plisp_reference_id = $this->plisp->RegisterId($this);
     }
     
     private function _build_from_array($list) {
-        assert(!is_numeric($list[0]), "building plist with number head");
-        assert(count($list) !== 0, "Attempting to build PLIST from empty list!");
+//         assert(!is_numeric($list[0]), "building plist with number head");
+//         assert(count($list) !== 0, "Attempting to build PLIST from empty list!");
         $this->_data = $list;
 
         // remove first item from list and store as 'head'
         $this->head = array_shift($list);
+
+        // Number is first element - this is not an executable list
+        if (is_numeric($this->head)) {
+            $this->_is_executable = false;
+        }
 
         // run head if necessary
         while ($this->head[0] === '&') {
@@ -63,15 +70,23 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
         }
         // don't bother evaluating yet - only do what you have to!
         $this->_args = $list;
+        
+        print "created plist : ($this)\n";
     }
     
     public function __invoke() {
         // evaluate this list
 //         $f = PlispFunction::Create($this->plisp, $this->head);
 //         return $f->Exec($this);
-        return PlispFunction::CreateAndRunList($this);
+        if ($this->_is_executable) {
+          $res = PlispFunction::CreateAndRunList($this);
+        } else {
+          $dat = $this->_data;
+          $res = function () use ($dat) {return $this->_data();};
+        }
+        $res = $this->_data;
+        return $res;
     }
-    
     
     function __tostring() {
       $str = implode(' ', \array_map('trim', $this->_data));
@@ -84,6 +99,10 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 
     static public function SetPlisp(plisp $plisp) {
         plist::$recent_plisp = &$plisp;
+    }
+    
+    function GetData() {
+      return $this->_data;
     }
         
     static function GenerateFromString($str, $plisp) {
