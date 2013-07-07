@@ -21,7 +21,11 @@ class plisp_if extends \templr\plisp\PlispFunction {
       $to_str = is_array($ev) ? '['.implode(',', $ev).']' :  "$ev";
       $eval_str = "return (" .$to_str . " or 0);";
 
-      return (eval($eval_str) ? $args[1]() : $args[2]());
+      $res = (eval($eval_str) ? $args[1]() : $args[2]());
+      $rstr = $res;
+      print "-- plisp_if returning with ";
+      print (is_callable($res, false, $rstr) ? $rstr : $res) . "\n";
+      return $res;
 
 //       $cmd = "return (". $args[0] . " ? true : false);";
 //         echo "\n\nTesting '$cmd' => '{$args[1]}' '{$args[2]}'\n\n";

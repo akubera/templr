@@ -12,6 +12,8 @@ namespace templr\plisp\commands;
 
 class Math extends \templr\plisp\PlispFunction {
     protected $c_command = "";
+    
+    static public $DEBUG = false;
 
   
     protected $math_functions = [
@@ -25,33 +27,48 @@ class Math extends \templr\plisp\PlispFunction {
     //  set the current function $c_command to that string
     //
     public function SetCommand($function) {
+        print "Math::SetCommand : $function ... ";
         if(isset($this->math_functions[$function])) {
           $this->c_command = $this->math_functions[$function];
+            print "found :  {$this->c_command}\n";
           return true;
         }
+        print "not found\n";
         return false;
     }
 
     public static function CreateWithCommand($plisp, $func) {
+        print "Math : create with command : $func\n";
       $math = new Math($plisp);
       return $math->SetCommand($func) ? $math : null;
     }
 
     public function exec($args) {
         $c = __namespace__.'\\'.$this->c_command;
-        print "func $c\n";
+        if (Math::$DEBUG) print "Math::exec $c\n";
         // only try to run $c if the function exists
-        return function_exists($c) ? $c($args) : null;
+        $res = function_exists($c) ? $c($args) : null;
+        if (Math::$DEBUG) print "returning from exec\n";
+        return $res;
     }
 }
 
 
 function plisp_add($list) {
+    if (Math::$DEBUG) print "Math::plisp_add (...)\n";
+
     $sum = 0;
-    foreach ($list as $el) {
-        $sum += $el();// $el->eval();
+    foreach ($list as $x) {
+        $X = $x();
+        if (Math::$DEBUG) print " + $X\n";
+
+        // evaluate 'x' and add result to sum
+        $sum += $X;// $el->eval();
     }
-    return $sum;
+    if (Math::$DEBUG) print " = $sum\n";
+    if (Math::$DEBUG) print "Math::plisp_add DONE\n";
+
+    return function() use ($sum) { return $sum;};
 }
 
 function plisp_minus($list) {

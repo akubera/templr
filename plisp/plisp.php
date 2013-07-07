@@ -17,6 +17,8 @@ class PLISP {
     static protected $string_id_prefix = "&STR";
     static protected $list_id_prefix = "&LST";
 
+    static public $DEBUG = true;
+
     protected $double_ampersands = true;
     
 
@@ -46,16 +48,29 @@ class PLISP {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
 
+      
+
+      print "\n=== Building plisp header ===\n";
+      ob_start(function ($buffer) { return preg_replace('/\n/', "\n   ", $buffer);});
       // Build the master list - which is a list that runs each command given 
       //  in the initial plisp init string, using plisp command 'all'
       $master_list = $this->BuildLists("(all $string)");
+      ob_end_flush();
+      ob_end_flush();
+      print "\n=== Running plisp header ===\n";
+      ob_start(function ($buffer) { return preg_replace('/\n/', "\n   ", $buffer);});
 
       // run the master list
       $string = $master_list(); // $this->RecursiveEval($master_list);
+      ob_end_flush();
+      ob_end_flush();
+//          print  preg_replace('/x/', 'X', $x);
+      print "=== Done ===\n";
 
       // print the end result
-      print "End : ";
+      print " = Result = \n";
       var_dump($string);
+        print " ==== ";
     }
 
     //
@@ -120,14 +135,14 @@ class PLISP {
     private function RecursiveEval($list) {
       return $list->run();
 
-      print "found id : " . $this->FindId($list) . "\n";
+      if (plisp::$DEBUG) print "found id : " . $this->FindId($list) . "\n";
 
       $match = [];
       $offset = 0;
       $line = $str;
 
       do {
-        print "\n\nLINE: $line\n\n";
+        if (plisp::$DEBUG) print "\n\nLINE: $line\n\n";
 
         // Get inner contents of the command
         preg_match("/\([^\)\(]+\)/", $line, $match, PREG_OFFSET_CAPTURE);
@@ -147,19 +162,17 @@ class PLISP {
           $parens = $subcommand;
           return $this->EvalSingleLine($no_parens);
         }
-       print "RecursiveEval: $subcommand\n";
+        if (plisp::$DEBUG) print "RecursiveEval: $subcommand\n";
         $res = $this->RecursiveEval($subcommand);
-        print "\n\nRES: $res\n\n";
+        if (plisp::$DEBUG) print "\n\nRES: $res\n\n";
 
         $line = substr_replace($line, $res, $offset, strlen($subcommand));
 
       } while ($offset !== 0);
-              print "\n\nEND WHILE LINE: $line\n\n";
-
     }
 
     protected function EvalSingleLine($line) {
-        print " Eval Single Line : '$line' ";
+        if (plisp::$DEBUG) print " Eval Single Line : '$line' ";
         // escape quotes
         $underscores = 0;
         $d_under = str_replace("_", "__", $line, $underscores);
@@ -171,7 +184,7 @@ class PLISP {
         $f = PlispFunction::Create($this, $command);
         $res = $f->exec($args);
         $txt = ob_get_clean();
-        print " => '$res'\n$txt";
+        if (plisp::$DEBUG) print " => '$res'\n$txt";
         return "$res";
     }
     
@@ -203,11 +216,21 @@ class PLISP {
     }
     
     public function set($name, $val) {
-      if ($this->get($val) === null) {
-        $this->variables[$name] = $val;
-      } else {
-        $this->variables[$name] = $this->get($val);
-      }
+        if (plisp::$DEBUG) print "-- plisp.set($name, $val)\n";
+
+        if (is_numeric($val)) {
+            $this->variables[$name] = $val;
+        } else {
+          $v = $this->get($val);
+          if ($v === null) {
+            $this->variables[$name] = $val;
+          } else {
+            $this->variables[$name] = $v;
+          }
+        }
+
+        if (plisp::$DEBUG) var_dump($this->variables);
+        if (plisp::$DEBUG) print "-- plisp.set Done\n";
     }
 
     public function RegisterId($obj) {
@@ -232,17 +255,27 @@ class PLISP {
       if (is_null($name)) {
         return null; // function(){return null;};
       }
-      
-      if (is_callable($name)) {
+
+      if (is_array($name)) {
+//          $backtrace = debug_backtrace();
+//          foreach ($backtrace as $frame) {
+//              print "{$frame['class']}{$frame['type']}{$frame['function']}\n";
+//          }
+//          exit(0);
+      }
+      $cname = '';
+      if (is_callable($name, false, $cname)) {
+          print "[plisp.get] Calling $cname()\n";
         $name = $name();
       }
+      
+      if (plisp::$DEBUG) print "Plisp.Get() : Looking for '$name'... ";
 
-       print "Looking for '$name'... ";
+      // get whatever $name is referring to
+      $res = $this->GetReference($name);
 
-        $res = null;
-
-        if (null !== ($res = $this->GetReference($name))) {
-           print "found '$res'!\n";
+      if (null !== $res and '' !== $res) {
+           if (plisp::$DEBUG) print "found '$res'!\n";
            
            if (is_string($res)) {
            
@@ -257,12 +290,21 @@ class PLISP {
         } else {
           $res = $this->Clean($name);
         }
-           print "found '$res'\n";
+
+        if (plisp::$DEBUG) print "found '$res'\n";
 
         return $res;
     }
 
     public function GetReference($id) {
+      if (is_array($id)) {
+          var_dump($id);
+           $res = [];
+          foreach ($id as $r) {
+              $res[] = $this->GetReference($r);
+          }
+          return $res;
+      }
       // we have a string
       if (strpos($id, plisp::$string_id_prefix) === 0) {
           return $this->literal_strings[$id];

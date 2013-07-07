@@ -11,6 +11,8 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
     // a static reference to a plisp environment - there should only be one, 
     //  but we optionally leave this here to allow more.
     static protected $recent_plisp = null;
+    
+    static public $DEBUG = true;
 
     // the raw init array;
     protected $_data = [];
@@ -20,12 +22,23 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 
     // the evaluated objects
     protected $_args = [];
-    
+
+    // associated plisp environment
     public $plisp = null;
-    
+
+    // array_access index
     protected $_index = 0;
+
+    // if _is_execuable we must invoke the plisp command with the first element of the array
+    // if not, return the array as a bunch of data
     protected $_is_executable = true;
     
+    /*
+     * Build a plist out of a list of things, associate with a plisp object if one hasn't been
+     * set to the static memember recent_plisp, not expected to have more than one plisp environment
+     * but this parameter allows for non-singleton use. 
+     * 
+     */
     function __construct($list = [], $plisp = null) {
         // we have a new recent plisp
         if (is_a($plisp, "\templr\plisp\plisp")) {
@@ -35,66 +48,107 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
         // set the plisp member to the most recent plisp, perhaps just set a few lines before
         $this->plisp = Plist::$recent_plisp;
 
+        // We are trying to create a list from a single number or null, we are not executable
+        // proceed to build from a single-element array
         if (is_numeric($list) or is_null($list)) {
-//           die ("Initiating plist with number : $list \n");
-          $this->_build_from_array([$list]);        
+            $this->_build_from_array([$list]);        
         } else if (is_array($list)) {
-          print "building from list : [". implode(",", $list)."]\n";
-          $this->_build_from_array($list);
+
+            if (PLIST::$DEBUG) print "building plist from list : [". implode(",", $list)."]\n";
+
+            // empty list is equivalent to null list
+            if (count($list) === 0 || (count($list) === 1 && $list[0] === "")) {
+                $list = [null];
+            }
+
+            $this->_build_from_array($list);
         } else if (is_string($list)) {
-          print "building from string : '$list'\n";
-          $this->_build_from_array(explode(' ', $list));        
+          if (PLIST::$DEBUG) print "building plist from string : '$list'\n";
+          $list = preg_split("/[\s]+/", $list, -1, PREG_SPLIT_NO_EMPTY); //explode(' ', $list);
+
+          if (count($list) === 0) {
+              $list = [null];
+          }
+          $this->_build_from_array($list);
         } else {
           die ("Unkown plist initiating object of class '" . get_class($list) . "'\n");
         }
         $this->plisp_reference_id = $this->plisp->RegisterId($this);
+        if (PLIST::$DEBUG) print "Created $this->plisp_reference_id = ($this)\n";
     }
-    
+
+    /*
+     * Called from constructor - accepts an array of data
+     */
     private function _build_from_array($list) {
 //         assert(!is_numeric($list[0]), "building plist with number head");
-//         assert(count($list) !== 0, "Attempting to build PLIST from empty list!");
+        assert(count($list) !== 0, "Attempting to build PLIST from empty list - should have been set to null!");
+        
+        // No function may be identified by a number or 'null'
+        if (is_numeric($list[0]) or is_null($list[0])) {
+            $this->_is_executable = false;
+        }
+        
+        // _data is a copy of initilization list
         $this->_data = $list;
 
         // remove first item from list and store as 'head'
         $this->head = array_shift($list);
 
-        // Number is first element - this is not an executable list
-        if (is_numeric($this->head)) {
-            $this->_is_executable = false;
+        // if head is a reference - 'get' from plisp and execute
+        while ($this->head[0] === '&') {
+            if (PLIST::$DEBUG) print "building from array loop:\n";
+            $x = $this->plisp->Get($this->head);
+            $this->head = $x();
         }
 
-        // run head if necessary
-        while ($this->head[0] === '&') {
-          $x = $this->plisp->Get($this->head);
-          $this->head = $x();
-        }
         // don't bother evaluating yet - only do what you have to!
         $this->_args = $list;
-        
-        print "created plist : ($this)\n";
     }
-    
-    public function __invoke() {
+
+    // 
+    public function __invoke($exec_all = true) {
+        if (!$exec_all) {
+          return $this->_data;
+        }
         // evaluate this list
 //         $f = PlispFunction::Create($this->plisp, $this->head);
 //         return $f->Exec($this);
         if ($this->_is_executable) {
+          ob_start(function ($buffer) { return preg_replace('/\n/', "\n|    ", $buffer);});
           $res = PlispFunction::CreateAndRunList($this);
+          ob_end_flush();
         } else {
           $dat = $this->_data;
-          $res = function () use ($dat) {return $this->_data();};
+          $res = function () use ($dat) {return $dat;};
         }
-        $res = $this->_data;
         return $res;
     }
     
     function __tostring() {
-      $str = implode(' ', \array_map('trim', $this->_data));
+        if (count($this->_data) === 0) {
+            die("PLIST Error : Completely empty plist ({$this->plisp_reference_id})");
+        }
+
+        $str = $this->_data[0] === null ? "null" : "'{$this->_data[0]}'";
+            
+        if (count($this->_data) === 1) {
+            return $str;
+        }
+        
+        foreach (array_slice($this->_data, 1) as $s) {
+            if (is_null($s)) {// === null) {
+                $str .= " null";
+            } else {
+                $str .= " '" . $s . "'";
+            }
+        }
+//      $str = implode(' ', \array_map('trim', $this->_data));
       return $str;
     }
     
     function PrintOut() {
-      print "($this)\n";
+      print "($this)p\n";
     }
 
     static public function SetPlisp(plisp $plisp) {
@@ -118,13 +172,22 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
         return $res;
     }
 
+    
+    /**
+     * Recursively create all plists in the string '$str'
+     * 
+     * @param string $str string with which to build the plist
+     * @param type $plisp if plisp has not been set - set it here
+     * 
+     * @return \templr\plisp\Plist
+     */
     static protected function RecursiveCreation($str, $plisp = null) {
-      print "RecursiveCreation: $str\n";
+      if (PLIST::$DEBUG) print "RecursiveCreation: $str\n";
 
       $match = [];
 
       // Get first matching 'simple' command
-      preg_match("/\([^\)\(]+\)/", $str, $match, PREG_OFFSET_CAPTURE);
+      preg_match("/\([^\)\(]*\)/", $str, $match, PREG_OFFSET_CAPTURE);
 
       // entire simple sublist (including '(' & ')')
       $sublist_str = $match[0][0];
@@ -136,10 +199,10 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
       }
       
       // explode the string and create a new list
-      $sublist = explode(' ', substr($sublist_str, 1, -1));
-
-      $new_plist = new Plist($sublist, $plisp);
+      $sublist = preg_split("/[\s]+/", substr($sublist_str, 1, -1), -1, PREG_SPLIT_NO_EMPTY); //explode(' ', substr($sublist_str, 1, -1));
+        ob_start(function ($buffer) { return preg_replace('/\n/', "\n   ", $buffer);});
       
+      $new_plist = new Plist($sublist, $plisp);
       // we have reached the end! return our $new_plist
       if ($offset === 0) {
         return $new_plist;
@@ -147,8 +210,10 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 
       // we are still somewhere in the middle - replace this sublist with a reference      
       $new_str = substr_replace($str, $new_plist->plisp_reference_id, $offset, strlen($sublist_str));
-      
-      return PList::RecursiveCreation($new_str, $plisp);
+        ob_end_flush();
+      $res = PList::RecursiveCreation($new_str, $plisp);
+
+      return $res;
     }
  
     public function Slice(int $offset, int $length = NULL) {
@@ -173,11 +238,14 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 
     // get item at '$offset'
     public function offsetGet($offset) {
-        $res = isset($this[$offset]) ? $this->_args[$offset] : null;
+
+        $res = isset($this->_args[$offset]) ? $this->_args[$offset] : null;
         if (is_numeric($res)) {
             $res = floatval($res);
         } else 
         if ( $x = $this->plisp->Get($res) ) {
+           if (PLIST::$DEBUG) print "[$this->plisp_reference_id] getting item at offset '$offset'\n";
+
           if (is_callable($x)) { 
             return $x;
           }

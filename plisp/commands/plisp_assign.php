@@ -13,8 +13,22 @@ namespace templr\plisp\commands;
 class plisp_assign extends \templr\plisp\PlispFunction {
   public function exec($arg) {
 //     print "\nsetting  $arg[0] to  $arg[1] \n";
+    print "--Running arg0\n";
     $A0 = $arg[0]();
+    while (is_callable($A0)) {
+        $A0 = $A0();
+    }
+    print "--Done\n";
+    print "--Running arg1\n";
     $A1 = $arg[1]();
+    print "--Done\n";
+
+    while (is_callable($A1)) {
+        $A1 = $A1();
+    }
+
+    print "--Assigning $A1 to $A0\n";
+
     $this->plisp->set($A0, $A1);
     return $A1;
   }

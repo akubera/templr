@@ -30,11 +30,13 @@ abstract class PlispFunction
     }  
     
     public function __invoke($args) {
-        return $this->Exec($args);
+        $res = $this->Exec($args);
+        print "returning from __invoke\n";
+        return $res;
     }
     
     static public function Create($plisp, $name) {    
-        print "creating plispfunction $name\n";
+        print "Creating plispfunction '$name'\n";
         $res = null;
 
         // check if $name provided is an alias to a function - replace with that name
@@ -59,13 +61,19 @@ abstract class PlispFunction
         if ($res === null) {
             throw new \Exception("Error! Unimplemented PlispFunction class '$name'. Please add a class with an 'exec' method to namespace " . __namespace__. "\\commands.\n");
         }
-
+        print "Returning from PlispFunction::Create($name)\n";
         return $res;
     }
     
     static public function CreateAndRunList($plist) {
         $f = PlispFunction::Create($plist->plisp, $plist->head);
-        return $f($plist);
+        $res = $f($plist);
+        if (is_callable($res)) {
+            print "Returning from CreateAndRunList with executable\n";
+        } else {
+            print "Returning from CreateAndRunList with $res\n";
+        }
+        return $res;
     }
 
 }
