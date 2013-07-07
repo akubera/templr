@@ -12,6 +12,7 @@
  // Declare the interface 'iTemplate'
 abstract class PlispFunction
 {
+    static public $DEBUG = true;
     protected static $func_aliases = [  "=" => "plisp_assign",
                                       "set" => "plisp_assign",
                                    "assign" => "plisp_assign",
@@ -31,12 +32,12 @@ abstract class PlispFunction
     
     public function __invoke($args) {
         $res = $this->Exec($args);
-        print "returning from __invoke\n";
+        if (PlispFunction::$DEBUG) print "PlispFunction returning from __invoke\n";
         return $res;
     }
     
     static public function Create($plisp, $name) {    
-        print "Creating plispfunction '$name'\n";
+        if (PlispFunction::$DEBUG) print "Creating plispfunction '$name'\n";
         $res = null;
 
         // check if $name provided is an alias to a function - replace with that name
@@ -61,17 +62,19 @@ abstract class PlispFunction
         if ($res === null) {
             throw new \Exception("Error! Unimplemented PlispFunction class '$name'. Please add a class with an 'exec' method to namespace " . __namespace__. "\\commands.\n");
         }
-        print "Returning from PlispFunction::Create($name)\n";
+        if (PlispFunction::$DEBUG) print "Returning from PlispFunction::Create($name)\n";
         return $res;
     }
     
     static public function CreateAndRunList($plist) {
         $f = PlispFunction::Create($plist->plisp, $plist->head);
         $res = $f($plist);
-        if (is_callable($res)) {
-            print "Returning from CreateAndRunList with executable\n";
-        } else {
-            print "Returning from CreateAndRunList with $res\n";
+        if (PlispFunction::$DEBUG)  {
+            if (is_callable($res)) {
+                print "Returning from CreateAndRunList with executable\n";
+            } else {
+                print "Returning from CreateAndRunList with $res\n";
+            }
         }
         return $res;
     }
