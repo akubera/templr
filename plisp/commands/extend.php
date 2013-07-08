@@ -37,7 +37,7 @@ class Extend extends \templr\plisp\PlispFunction
         if (isset(Extend::$loaded_files[$filename])) {
           return;
         }
-        print "Loading {$filename}\n";
+        if (\templr\plisp\PlispFunction::$DEBUG) print "Loading {$filename}\n";
         $wp = new \templr\Webpage($filename);
         Extend::$loaded_files[$filename] = $wp->Render();
     }

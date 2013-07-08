@@ -12,7 +12,7 @@
  // Declare the interface 'iTemplate'
 abstract class PlispFunction
 {
-    static public $DEBUG = true;
+    static public $DEBUG = false;
     protected static $func_aliases = [  "=" => "plisp_assign",
                                       "set" => "plisp_assign",
                                    "assign" => "plisp_assign",

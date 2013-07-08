@@ -99,7 +99,7 @@ class WebPage implements \ArrayAccess {
             die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
         
-        print "rendering " . $this->_root_name . "\n";
+        print "[". __METHOD__.  "] rendering " . $this->_root_name . "\n";
 
         // get the contents of the file
         $str = $this->load_file($this->_root_name);

@@ -16,6 +16,6 @@ class Ifset extends \templr\plisp\PlispFunction
         if ($this->plisp->get($var)) {
           return $args[1]();
         }
-        return null;
+        return true;
     }
 }

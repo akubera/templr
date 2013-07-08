@@ -21,6 +21,34 @@ class PLISP {
 
     protected $double_ampersands = true;
     
+    static public function BeginSub($method = '') {
+      $s = '| ';
+//      print $method $method."\n";
+      if ($method) {
+          ob_start(function ($buffer) use ($s, $method) { 
+              return "\n$s".preg_replace('/\n/', "\n$s", trim( "{{".$method . "}}\n" . $buffer)) . "\n";
+          });
+      } else {
+        ob_start(function ($buffer) use ($s) { return "\n$s".preg_replace('/\n/', "\n$s", trim($buffer)) . "\n";});
+      }
+    }
+
+    static public function ReturnSub($val) {
+        $cname = '';
+        $ret_tag  =  ">> ";
+        if (is_callable($val, false, $cname)) {
+            print $ret_tag . $cname;
+        } else {
+            print $ret_tag . $val;
+        }
+    }
+    
+    static public function EndSub() {
+        if (PLISP::$DEBUG)
+            ob_end_flush();    
+        else 
+            ob_end_clean();
+    }
 
     public function __construct($obj) {
       $this->obj = $obj;
@@ -43,39 +71,36 @@ class PLISP {
       // ensure number of ( matches number of )
       $l_count = substr_count($string, '(');
       $r_count = substr_count($string, ')');
-      
       if ($l_count !== $r_count) {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
 
-      
-
-      print "\n=== Building plisp header ===\n";
-      ob_start(function ($buffer) { return preg_replace('/\n/', "\n   ", $buffer);});
+      if (PLISP::$DEBUG) print "\n=== Building plisp header ===";
       // Build the master list - which is a list that runs each command given 
-      //  in the initial plisp init string, using plisp command 'all'
+      //  in the initial plisp init string, using plisp command "all'
       $master_list = $this->BuildLists("(all $string)");
-      ob_end_flush();
-      ob_end_flush();
-      print "\n=== Running plisp header ===\n";
-      ob_start(function ($buffer) { return preg_replace('/\n/', "\n   ", $buffer);});
+      if (PLISP::$DEBUG) print "=== Done ===\n";
+      
+      if (PLISP::$DEBUG) print "=== Running plisp header ===";
+//      ob_start(function ($buffer) { return preg_replace('/\n/', "\n  ", $buffer . "\n") . "\n";});
 
       // run the master list
       $string = $master_list(); // $this->RecursiveEval($master_list);
-      ob_end_flush();
-      ob_end_flush();
-//          print  preg_replace('/x/', 'X', $x);
-      print "=== Done ===\n";
+      if (PLISP::$DEBUG) print "=== Done ===\n";
 
-      // print the end result
-      print " = Result = \n";
-      var_dump($string);
+      if (PLISP::$DEBUG) {
+        // print the end result
+        print " = Result = \n";
+        var_dump($string);
         print " ==== ";
+      }
     }
 
     //
     protected function BuildLists($str) {
+        PLISP::BeginSub(__METHOD__);
         $res = plist::GenerateFromString($str, $this);
+        PLISP::EndSub();
         return $res;
     }
 
@@ -252,7 +277,8 @@ class PLISP {
 
 
     public function get($name) {
-      if (is_null($name)) {
+      PLISP::BeginSub(__METHOD__);
+          if (is_null($name)) {
         return null; // function(){return null;};
       }
 
@@ -275,30 +301,33 @@ class PLISP {
       $res = $this->GetReference($name);
 
       if (null !== $res and '' !== $res) {
-           if (plisp::$DEBUG) print "found '$res'!\n";
+        if (plisp::$DEBUG) print "found '$res'!\n";
            
-           if (is_string($res)) {
-           
-              $res = function () use ($res) { return $res; };
-           }
-           return $res;
+        if (is_string($res)) {   
+            $res = function () use ($res) { return $res; };
         }
-        if (isset($this->variables[$name])) {
-          $res = $this->variables[$name] ;
-        } else if ($name[0] == "\$") {
-          $res = null; // function(){return null;};;
-        } else {
-          $res = $this->Clean($name);
-        }
-
-        if (plisp::$DEBUG) print "found '$res'\n";
-
+        PLISP::ReturnSub($res);
+        PLISP::EndSub();
         return $res;
+      }
+      if (isset($this->variables[$name])) {
+          $res = $this->variables[$name] ;
+      } else if ($name[0] == "\$") {
+          $res = null; // function(){return null;};;
+      } else {
+          $res = $this->Clean($name);
+      }
+
+      if (plisp::$DEBUG) print "found '$res'\n";
+
+      PLISP::ReturnSub($res);
+      PLISP::EndSub();
+      return $res;
     }
 
     public function GetReference($id) {
       if (is_array($id)) {
-          var_dump($id);
+//          var_dump($id);
            $res = [];
           foreach ($id as $r) {
               $res[] = $this->GetReference($r);
