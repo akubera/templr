@@ -18,7 +18,7 @@ class plisp_assign extends \templr\plisp\PlispFunction {
       PLISP::BeginSub(__METHOD__);
         print "Running arg0 $arg\n";
     $A0 = $arg[0]();
-    while (is_callable($A0)) {
+    while (!is_a($A0, "templr\plisp\plispvariable") && is_callable($A0)) {
         $A0 = $A0();
     }
     print "--Done\n";

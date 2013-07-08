@@ -54,7 +54,6 @@ class PLISP {
 
     public function __construct($obj) {
       $this->obj = $obj;
-      $this->variables = [];
     }
     
     public function Evaluate($string) {
@@ -98,7 +97,7 @@ class PLISP {
         print " ==== ";
       }
 //      var_dump($this->Reduce());
-//     print $this->jsonize();
+      print $this->jsonize();
     }
 
     //
@@ -162,61 +161,6 @@ class PLISP {
       return $escaped;
     }
 
-    private function RecursiveEval($list) {
-      return $list->run();
-
-      if (plisp::$DEBUG) print "found id : " . $this->FindId($list) . "\n";
-
-      $match = [];
-      $offset = 0;
-      $line = $str;
-
-      do {
-        if (plisp::$DEBUG) print "\n\nLINE: $line\n\n";
-
-        // Get inner contents of the command
-        preg_match("/\([^\)\(]+\)/", $line, $match, PREG_OFFSET_CAPTURE);
-        
-        // entire subcommand (including '(' & ')')
-        $subcommand = $match[0][0];
-        if (!$subcommand) {
-            echo "NOT $line\n";
-            return '';
-        }
-        // the position we found the instruction
-        $offset = $match[0][1];
-        
-        // if it was the beginning - there are no sub ()
-        if ($offset === 0) {
-          $no_parens = substr($subcommand, 1, -1);
-          $parens = $subcommand;
-          return $this->EvalSingleLine($no_parens);
-        }
-        if (plisp::$DEBUG) print "RecursiveEval: $subcommand\n";
-        $res = $this->RecursiveEval($subcommand);
-        if (plisp::$DEBUG) print "\n\nRES: $res\n\n";
-
-        $line = substr_replace($line, $res, $offset, strlen($subcommand));
-
-      } while ($offset !== 0);
-    }
-
-    protected function EvalSingleLine($line) {
-        if (plisp::$DEBUG) print " Eval Single Line : '$line' ";
-        // escape quotes
-        $underscores = 0;
-        $d_under = str_replace("_", "__", $line, $underscores);
-
-        $args = array_filter(explode(' ', $line), 'strlen'); // Plist::GenerateFromString($line);
-
-        $command = array_shift($args);
-        ob_start();
-        $f = PlispFunction::Create($this, $command);
-        $res = $f->exec($args);
-        $txt = ob_get_clean();
-        if (plisp::$DEBUG) print " => '$res'\n$txt";
-        return "$res";
-    }
     
     //
     // When given some identifier in a plisp - ensure 
@@ -247,18 +191,37 @@ class PLISP {
     
     public function set($name, $val) {
         PLISP::BeginSub(__METHOD__);
-        if (plisp::$DEBUG) print "-- plisp.set($name, $val)\n";
+        if (plisp::$DEBUG) print "plisp.set($name, $val)\n";
 
-        if (is_numeric($val)) {
-            $this->variables[$name] = $val;
-        } else {
-          $v = $this->get($val);
-          if ($v === null) {
-            $this->variables[$name] = $val;
-          } else {
-            $this->variables[$name] = $v;
-          }
+        if (is_a($name, "templr\plisp\plispvariable")) {
+            $name = $name->name;
+        } else 
+            
+         if (!is_string($name)) {
+            throw new \Exception("Error : Attempting to identify plisp variable by something not a string! not implemented yet");
+        } else
+        
+            if ($name === '') {
+            throw new \Exception("Error : Attempting to identify plisp variable by empty string!");
         }
+        
+        // a string we must ensure is not a reference
+        if ( is_string($val) ) {
+            $val = $this->get($val);
+        }
+
+        // Append a $ so that we identify it as a variable
+        if ($name[0] !== '$') {
+            $name = '$' . $name;
+        }
+        
+        $v = new PlispVariable();
+
+        $v->name = $name;
+        $v->value = $val;
+        $v->is_set = true;
+
+        $this->variables[$name] = $v;
 
         if (plisp::$DEBUG) var_dump($this->variables);
         if (plisp::$DEBUG) print "-- plisp.set Done\n";
@@ -352,8 +315,18 @@ class PLISP {
       // we have a list
       if (strpos($id, plisp::$list_id_prefix) === 0) {
           return $this->stored_lists[$id];
+      } else
+          
+      // we have a variable    
+      if ($id[0] === '$') {
+          if (!isset($this->variables[$id])) {
+              $this->variables[$id] = new PlispVariable();
+              $this->variables[$id]->name = $id;
+              return $id;
+          }
+          return $this->variables[$id];
+//              throw new \Exception("Error : No such plisp variable {$id} in plisp env.");
       }
-      
       return null;
     }
     
