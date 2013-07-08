@@ -110,7 +110,11 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 
     // 
     public function __invoke($exec_all = true) {
+        PLISP::BeginSub(__METHOD__);
+        print "ID : {$this->plisp_reference_id}\n";
+
         if (!$exec_all) {
+          PLISP::EndSub();
           return $this->_data;
         }
         
@@ -119,16 +123,15 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
 //         return $f->Exec($this);
         $spacer = "|  ";
         if ($this->_is_executable) {
-            PLISP::BeginSub(__METHOD__ . "  ". $this->head);
 //            print $this->head . "\n";
 //          ob_start(function ($buffer) use ($spacer) { return "\nRunning Plisp::{$this->head}\n{$spacer}" . preg_replace('/\n/', "\n{$spacer}",  trim($buffer)) . "\n";});
           $res = PlispFunction::CreateAndRunList($this);
 //          ob_end_flush();
-          PLISP::EndSub(__METHOD__);
         } else {
           $dat = $this->_data;
           $res = function () use ($dat) {return $dat;};
         }
+        PLISP::EndSub();
         return $res;
     }
     
@@ -350,6 +353,10 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
     
     public function count() {
        return count($this->_args);
+    }
+    
+    public function jsonize() {
+        return json_encode(['data' => $this->_data, 'args' => $this->_args]);
     }
 
 }

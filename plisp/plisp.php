@@ -13,6 +13,8 @@ class PLISP {
     protected $literal_strings = [];
     protected $stored_lists = [];
     protected $variables = [];
+    protected $extended_files = [];
+    protected $included_files = [];
 
     static protected $string_id_prefix = "&STR";
     static protected $list_id_prefix = "&LST";
@@ -52,6 +54,7 @@ class PLISP {
 
     public function __construct($obj) {
       $this->obj = $obj;
+      $this->variables = [];
     }
     
     public function Evaluate($string) {
@@ -94,6 +97,8 @@ class PLISP {
         var_dump($string);
         print " ==== ";
       }
+//      var_dump($this->Reduce());
+//     print $this->jsonize();
     }
 
     //
@@ -241,6 +246,7 @@ class PLISP {
     }
     
     public function set($name, $val) {
+        PLISP::BeginSub(__METHOD__);
         if (plisp::$DEBUG) print "-- plisp.set($name, $val)\n";
 
         if (is_numeric($val)) {
@@ -256,6 +262,7 @@ class PLISP {
 
         if (plisp::$DEBUG) var_dump($this->variables);
         if (plisp::$DEBUG) print "-- plisp.set Done\n";
+        PLISP::EndSub();
     }
 
     public function RegisterId($obj) {
@@ -277,21 +284,24 @@ class PLISP {
 
 
     public function get($name) {
-      PLISP::BeginSub(__METHOD__);
-          if (is_null($name)) {
-        return null; // function(){return null;};
-      }
+        PLISP::BeginSub(__METHOD__);
+        if (is_null($name)) {
+          PLISP::ReturnSub(null);
+          PLISP::EndSub();
+          return null; // function(){return null;};
+        }
 
-      if (is_array($name)) {
+//        if (is_array($name)) {
 //          $backtrace = debug_backtrace();
 //          foreach ($backtrace as $frame) {
 //              print "{$frame['class']}{$frame['type']}{$frame['function']}\n";
 //          }
 //          exit(0);
-      }
+//        }
+
       $cname = '';
       if (is_callable($name, false, $cname)) {
-          print "[plisp.get] Calling $cname()\n";
+          print "Calling $cname()\n";
         $name = $name();
       }
       
@@ -303,9 +313,9 @@ class PLISP {
       if (null !== $res and '' !== $res) {
         if (plisp::$DEBUG) print "found '$res'!\n";
            
-        if (is_string($res)) {   
-            $res = function () use ($res) { return $res; };
-        }
+//        if (is_string($res)) {   
+//            $res = function () use ($res) { return $res; };
+//        }
         PLISP::ReturnSub($res);
         PLISP::EndSub();
         return $res;
@@ -356,9 +366,28 @@ class PLISP {
       
       if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
           $id = array_search($obj, $this->stored_lists, true);
-      } 
+      }
       
       return $id;
+    }
+    
+    public function Reduce() {
+        return ['lists' => $this->stored_lists,'variables' => $this->variables, "strings" => $this->literal_strings];
+    }
+    
+    public function jsonize() {
+        $res = $this->Reduce();
+        foreach ($res as $k => &$v) {
+            foreach ($v as $id => &$thing) {
+                if (is_a($thing, "templr\plisp\Plist")) {
+                    $res[$k][$id] = $thing->jsonize();
+                } else {
+                    $res[$k][$id] = json_encode($thing);
+                }
+            }
+        }
+        var_dump($res);
+        return json_encode($res);
     }
     
 }

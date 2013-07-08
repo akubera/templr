@@ -1,4 +1,5 @@
 <?php
+
 /*
  *  templr/plisp/extend.php
  *
@@ -9,36 +10,40 @@
 
 namespace templr\plisp\commands;
 
-class Extend extends \templr\plisp\PlispFunction
-{
+use \templr\plisp\PLISP;
+
+class Extend extends \templr\plisp\PlispFunction {
+
     static $loaded_files = [];
 
     public function exec($args) {
-
-//         for ($i = 0; $i < count($args); $i++) {
-//             $arg = $args[$i];
-      foreach ($args as $arg) {
-          $filename = $arg();
-          if (is_array($filename)) {
-            foreach ($filename as $fname) {
-              $this->load_file($fname);
+        PLISP::BeginSub(__METHOD__);
+        // Loop through each element
+        foreach ($args as $arg) {
+            $filename = $arg();
+            if (is_array($filename)) {
+                foreach ($filename as $fname) {
+                    $this->load_file($fname);
+                }
+            } else if (is_string($filename)) {
+                $this->load_file($filename);
+            } else {
+                $this->load_file("$filename");
             }
-          } else if (is_string($filename)) {
-            $this->load_file($filename);
-          } else {
-            $this->load_file("$filename");
-          }
         }
+        PLISP::EndSub();
         return [true]; //new \templr\plisp\Plist();
     }
-    
+
     public function load_file($filename) {
         $filename = trim($filename, " \t\n\"'");
         if (isset(Extend::$loaded_files[$filename])) {
-          return;
+            return;
         }
-        if (\templr\plisp\PlispFunction::$DEBUG) print "Loading {$filename}\n";
+        if (\templr\plisp\PlispFunction::$DEBUG)
+            print "Loading {$filename}\n";
         $wp = new \templr\Webpage($filename);
         Extend::$loaded_files[$filename] = $wp->Render();
     }
+
 }
