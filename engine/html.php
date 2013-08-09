@@ -2,14 +2,16 @@
 
 namespace templr\engine;
 
-
 /**
- * Description of html
+ * Rendering enging which processes html code
  *
  * @author Andrew Kubera <andrewkubera@gmail.com>
  */
-class html extends AbstractEngine {
+class HtmlEngine extends AbstractEngine {
 
-    
+    public function Process($content) {
+        return $content;
+    }
+
 }
 

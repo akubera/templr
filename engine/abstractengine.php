@@ -9,6 +9,7 @@ namespace templr\engine;
  */
 abstract class AbstractEngine {
     
+    abstract public function Process($content);
     
 }
 
