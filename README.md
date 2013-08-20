@@ -72,6 +72,7 @@ $page->Render();
 
 In the TEMPLR_ROOT path, there should be a file named index (or rather index.TEMPLR_EXT) which would look something like
 
+```
 #
 # index.foo
 #
@@ -92,14 +93,12 @@ In the TEMPLR_ROOT path, there should be a file named index (or rather index.TEM
 
 [text:html_body]
 This is generated using the text engine - all html characters will be escaped, so everything looks exactly as typed.
-So I can type <b>This is not bold</b> without formatting.
-
-#
-# Endfile
-#
+So I can type &lt;b&gt;This is not bold&lt;/b&gt; without formatting.
+```
 
 which would render:
 
+```
 <!doctype html>
 <html>
   <head>
@@ -110,3 +109,6 @@ This is generated using the text engine - all html characters will be escaped, s
 So I can type &lt;b&gt;This is not bold&lt;/b&gt; without formatting.
   </body>
 </html>
+```
+
+More to come later...
