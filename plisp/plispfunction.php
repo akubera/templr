@@ -24,19 +24,19 @@ abstract class PlispFunction
 
     abstract public function Exec($args);
     protected $plisp = null;
-    
-    
+
+
     public function __construct($plisp) {
       $this->plisp = $plisp;
     }  
-    
+
     public function __invoke($args) {
         $res = $this->Exec($args);
         if (PlispFunction::$DEBUG) print "PlispFunction returning from __invoke\n";
         return $res;
     }
-    
-    static public function Create($plisp, $name) {    
+
+    static public function Create($plisp, $name) {
         if (PlispFunction::$DEBUG) print "Creating plispfunction '$name'\n";
         $res = null;
 
@@ -51,13 +51,13 @@ abstract class PlispFunction
         // check if we have our class
         if (class_exists($classname)) {
             $res = new $classname($plisp);
-        } 
+        }
 
         // we did not find the class - check in the math 'registry'
         if ($res === null) {
             $res = commands\Math::CreateWithCommand($plisp, $name);
         }
-        
+
         // we don't know waht to do with $name - throw error
         if ($res === null) {
             throw new \Exception("Error! Unimplemented PlispFunction class '$name'. Please add a class with an 'exec' method to namespace " . __namespace__. "\\commands.\n");
@@ -65,7 +65,7 @@ abstract class PlispFunction
         if (PlispFunction::$DEBUG) print "Returning from PlispFunction::Create($name)\n";
         return $res;
     }
-    
+
     static public function CreateAndRunList($plist) {
         $f = PlispFunction::Create($plist->plisp, $plist->head);
         $res = $f($plist);

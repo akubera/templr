@@ -24,15 +24,15 @@ class PLISP {
     protected $double_ampersands = true;
     
     static public function BeginSub($method = '') {
-      $s = '| ';
-//      print $method $method."\n";
-      if ($method) {
-          ob_start(function ($buffer) use ($s, $method) { 
-              return "\n$s".preg_replace('/\n/', "\n$s", trim( "{{".$method . "}}\n" . $buffer)) . "\n";
-          });
-      } else {
-        ob_start(function ($buffer) use ($s) { return "\n$s".preg_replace('/\n/', "\n$s", trim($buffer)) . "\n";});
-      }
+        $s = '| ';
+//        print $method $method."\n";
+        if ($method) {
+            ob_start(function ($buffer) use ($s, $method) { 
+             return "\n$s".preg_replace('/\n/', "\n$s", trim( "{{".$method . "}}\n" . $buffer)) . "\n";
+            });
+        } else {
+            ob_start(function ($buffer) use ($s) { return "\n$s".preg_replace('/\n/', "\n$s", trim($buffer)) . "\n";});
+        }
     }
 
     static public function ReturnSub($val) {
@@ -177,6 +177,8 @@ class PLISP {
         }
         return $item;
     }
+
+
     /**
      * 
      * @param string $str
@@ -247,12 +249,12 @@ class PLISP {
 
 
     public function get($name) {
-        PLISP::BeginSub(__METHOD__);
-        if (is_null($name)) {
-          PLISP::ReturnSub(null);
-          PLISP::EndSub();
-          return null; // function(){return null;};
-        }
+      PLISP::BeginSub(__METHOD__);
+      if (is_null($name)) {
+        PLISP::ReturnSub(null);
+        PLISP::EndSub();
+        return null; // function(){return null;};
+      }
 
 //        if (is_array($name)) {
 //          $backtrace = debug_backtrace();
@@ -265,7 +267,7 @@ class PLISP {
       $cname = '';
       if (is_callable($name, false, $cname)) {
           print "Calling $cname()\n";
-        $name = $name();
+            $name = $name();
       }
       
       if (plisp::$DEBUG) print "Plisp.Get() : Looking for '$name'... ";
