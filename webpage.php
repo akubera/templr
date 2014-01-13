@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class with HtmlElement tree structure which automatically 
+ * Class with HtmlElement tree structure which automatically
  *  renders an html document
  *
  * @author andrewkubera
@@ -22,7 +22,7 @@ class WebPage implements \ArrayAccess {
 
     /**
      * Create a templr webpage from the specified template filename
-     * 
+     *
      * @param string $template Filename of template to load
      * @param array $opts Extra otions for the webpage
      */
@@ -31,7 +31,7 @@ class WebPage implements \ArrayAccess {
         $template = $template ? : WebPage::$default_template_name;
         $ext = @$opts['ext'] ? : TEMPLR_EXT;
         $filename = "";
-        
+
         // set some default data references
         $this->_data['session'] = &$_SESSION;
 
@@ -74,16 +74,16 @@ class WebPage implements \ArrayAccess {
      *   and caching each one until done.
      */
     protected function _BuildTemplateTree() {
-        
+
     }
 
 
     /**
-     * Prints and returns the entire rendered webpage as a string by 
+     * Prints and returns the entire rendered webpage as a string by
      *  rendering the root file
-     * 
+     *
      * @param bool $print Determines whether to automatically print the webpage to stdout or not
-     * 
+     *
      * @return string
      */
     public function Render($print = true) {
@@ -98,7 +98,7 @@ class WebPage implements \ArrayAccess {
         if (!file_exists($this->_root_name)) {
             die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
-        
+
         print "[". __METHOD__.  "] rendering " . $this->_root_name . "\n";
 
         // get the contents of the file
@@ -108,7 +108,7 @@ class WebPage implements \ArrayAccess {
         $str = str_replace("{%%}", "%%", $str);
         $str = str_replace("%%", TEMPLR_WEB_ROOT, $str);
 
-        // Replace all escaped %% 
+        // Replace all escaped %%
         $str = str_replace("%\%", "%%", $str);
 
         // Print the entire page here
@@ -120,7 +120,7 @@ class WebPage implements \ArrayAccess {
         $this->renderlock = false;
         return $str;
     }
-    
+
     protected function load_file($filename) {
         // $string contains the rendered page
         $string = $this->read_file($filename);
@@ -128,10 +128,10 @@ class WebPage implements \ArrayAccess {
         // Find all blocks using regex
         $block_regex = "/^(\[[^:]{0,10}(?:[^\]]+)+\])/";
 
-        $blocks = array_map(function ($str) {return trim($str, "\n\r");}, 
+        $blocks = array_map(function ($str) {return trim($str, "\n\r");},
                       preg_split(Block::$id_matcher, $string, -1, PREG_SPLIT_DELIM_CAPTURE));
 
-        // TODO : Handle malformed files 
+        // TODO : Handle malformed files
         //   $Blocks should have odd number of entries - header and block-title pairs
 
         $header = $this->Process_Header(array_shift($blocks));
@@ -139,14 +139,14 @@ class WebPage implements \ArrayAccess {
         $block_list = [];
 
         while (count($blocks)) {
-          // shift the first and second items in blocks to 
+          // shift the first and second items in blocks to
           $block_list[] = new Block(array_shift($blocks), array_shift($blocks));
         }
     }
 
     /**
      * Renders the file with filename specified - returns resulting string
-     * 
+     *
      * @staticvar int $one
      * @param type $file
      * @return string
@@ -154,7 +154,7 @@ class WebPage implements \ArrayAccess {
     protected function render_file($file) {
         // required variable holding value '1' for preg_match
         static $one = 1;
-        
+
         // TODO : Check for cached copy of the file
 
         // $string contains the rendered page
@@ -206,7 +206,7 @@ class WebPage implements \ArrayAccess {
 
     /**
      * Includes the file given and returns the resulting string
-     * 
+     *
      * @param string $filename
      * @return string
      */
@@ -224,11 +224,11 @@ class WebPage implements \ArrayAccess {
 
     protected function Process_Header($header) {
         $plisp_env = new plisp\Plisp($this);
-        
+
         $plisp_env->Evaluate($header);
         return;
 
-        // Look for plisp 
+        // Look for plisp
         foreach(explode("\n", $header) as $line) {
             $backup_line = $line;
             // double all underscores:
@@ -236,7 +236,7 @@ class WebPage implements \ArrayAccess {
             $line = str_replace("_", "__", $line, $underscores);
 
             print $line . " ($underscores)\n\n";
-            
+
             // number of subcommands
             $subcommand_count = 0;
             $subcommands = [];
@@ -263,12 +263,13 @@ class WebPage implements \ArrayAccess {
 //              var_dump($subcommands);
             } while ($offset !== 0);
 
-            $safe = 0;
+            // safety limit to avoid infinite loops
+            $safe = 1024;
             // No errors! good
             $done = [];
-            while (count($subcommands) && $safe++ < 100) {
+            while (count($subcommands) && $safe--) {
                 $var = [];
-                
+
                 // Get first key and value
                 reset($subcommands);
                 $key = key($subcommands);
@@ -278,20 +279,20 @@ class WebPage implements \ArrayAccess {
                     $next = $subcommands[$key];
                     print "\n($key) Searching : '$next'\n";
                     preg_match("/_[\d]+/", $next, $var);
-                    
+
                     // Great! Simple lisp
                     if (count($var) === 0) {
                         // if there are no underscores - skip this step
                         if ($underscores !== 0) {
-                            // reset all double underscores 
+                            // reset all double underscores
                             $tmp_u = 0;
                             $next = str_replace("__", "_", $next, $tmp_u);
                             $underscores -= $tmp_u;
                         }
-                        
+
                         // process simple lisp
                         $done[$key] = $plisp_environment->Evaluate($next);
-                        
+
                         // remove from $subcommands
                         unset ($subcommands[$key]);
 
@@ -307,17 +308,17 @@ class WebPage implements \ArrayAccess {
                             print " Found : {$var[0]} => {$done[$var[0]]}\n";
                             $subcommands[$key] = str_replace($var[0], $done[$var[0]], $next);
                             break;
-                        } 
+                        }
                         // Need to search for it
                         else {
                             $key = $var[0];
                         }
                     }
-                                        
+
                 } while ($key !== 0);
 
             }
-            
+
         }
     }
 
@@ -375,7 +376,7 @@ class WebPage implements \ArrayAccess {
 
     /**
      * When turning into string - just render the whole structure (can do `echo $wp;`)
-     * 
+     *
      * @return string
      */
     public function __tostring() {

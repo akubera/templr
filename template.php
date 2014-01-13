@@ -18,6 +18,7 @@ class Template implements \ArrayAccess {
     protected $labels = [];
     protected $requires = [];
     protected $is_root_template;
+
     /**
      * Template Constructor
      * 
@@ -37,10 +38,10 @@ class Template implements \ArrayAccess {
             $this->contents = ob_get_clean();
         }
         print $this->contents . "\n";
-        
+
         $matches = [];
         $filenames = [];
-        
+
         // search for plisp expressions
         if (preg_match(plisp\PLISP::regex, $this->contents, $matches)) {
             var_dump($matches);
@@ -65,7 +66,7 @@ class Template implements \ArrayAccess {
                 $this->contents = preg_replace(self::require_regex, $file_str, $this->contents, 1);
             }
         }
-        
+
         // begin procesing imediately
         $this->process();
     }
@@ -78,7 +79,7 @@ class Template implements \ArrayAccess {
         if (count($split) === 0) {
             return;
         }
-        
+
         // if there was not a multiple of three results, format must be wrong
         if (count($split) % 3) {
             $nl = (PHP_SAPI === 'cli') ? "\n" : "<br />";
@@ -88,7 +89,7 @@ class Template implements \ArrayAccess {
 
         // trim all whitespace from elements of split
         $split = array_map('trim', $split);
-        
+
         // list of requires for this template
         $requirements = [];
 
