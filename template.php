@@ -21,7 +21,7 @@ class Template implements \ArrayAccess {
 
     /**
      * Template Constructor
-     * 
+     *
      * @param string $filename The filename of template to load
      */
     public function __construct($filename, $params = [], $is_root = false) {
@@ -159,7 +159,7 @@ class Template implements \ArrayAccess {
     public function getReqs() {
         return $this->requires;
     }
-    
+
     public function IsRoot() {
       return $this->is_root_template;
     }
@@ -229,7 +229,7 @@ class Template implements \ArrayAccess {
             return null;
         }
 
-        // Create usable variables from data array 
+        // Create usable variables from data array
         //  Ex $data = {"a"=>[1,2,3], "b"=>[5,6,7]},
         //   will create $a = [1,2,3], and $b = [1,2,3];
         //  !!!!!!!!! MUST NOT HAVE !!!!!!!!!!!!!
@@ -318,7 +318,7 @@ class Template implements \ArrayAccess {
 
         foreach ($this->labels['php'] as $Name => &$phps) {
             foreach ($phps['req'] as $requirements) {
-                
+
             }
         }
     }
@@ -326,11 +326,11 @@ class Template implements \ArrayAccess {
     /*
      * Stateless processing functions
      */
-    
+
     static function StripComments(&$string) {
-        
+
     }
-    
+
     /*
      * ArrayAccess functions
      */

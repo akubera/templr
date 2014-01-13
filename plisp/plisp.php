@@ -57,6 +57,12 @@ class PLISP {
     }
     
     public function Evaluate($string) {
+    
+      // No commands given
+      if ($string === "") {
+        return;
+      }
+    
       // remove front and end whitespace, and take out "string literals"
       $string = $this->RemoveStringLiterals(trim($string));
 
