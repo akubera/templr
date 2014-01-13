@@ -14,7 +14,7 @@ use \templr\plisp\PLISP;
 class All extends \templr\plisp\PlispFunction
 {
     public function exec($args) {
-                      PLISP::BeginSub(__METHOD__);
+        PLISP::BeginSub(__METHOD__);
         $spacer = "       ";
         print count($args) . " Arguments\n";
         $result = [];
