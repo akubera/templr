@@ -20,6 +20,8 @@ class WebPage implements \ArrayAccess {
     private $_template_root_path = '';
     private $_root_name = '';
 
+    private $_path_info = [];
+
     /**
      * Create a templr webpage from the specified template filename
      *
@@ -28,8 +30,13 @@ class WebPage implements \ArrayAccess {
      */
     public function __construct($template = NULL, $opts = []) {
 
+        // the name of the template we are looking for
         $template = $template ? : WebPage::$default_template_name;
-        $ext = @$opts['ext'] ? : TEMPLR_EXT;
+
+        // the extensions of the templates
+        $ext = @$opts['extension'] ? : TEMPLR_EXTENSION;
+
+        // the found filename
         $filename = "";
 
         // set some default data references
@@ -37,14 +44,24 @@ class WebPage implements \ArrayAccess {
 
         // check first character for directory separator - absolute path
         if ($template[0] === DIRECTORY_SEPARATOR) {
+
+            // template is the filename
             $filename = $template;
+
+            // _template_root_path
             $this->_template_root_path = dirname($filename);
+
+            // store the path info
+            $this->_path_info = pathinfo($filename);
+
         } else {
             // search through the template path for files that match the name
             self::$template_path = \array_merge(Templr::ViewPath(), Templr::TemplatePath());
             foreach (self::$template_path as $dir) {
                 $f = $dir . $template . $ext;
                 if (file_exists($f)) {
+                    // store the path info
+                    $this->_path_info = pathinfo($f);
                     $filename = $f;
                     $this->_template_root_path = $dir;
                     break;

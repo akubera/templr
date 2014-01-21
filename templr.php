@@ -3,7 +3,7 @@
 namespace templr;
 
 define('TEMPLR_ROOT', '.');
-define('TEMPLR_EXT', 'tplr');
+define('TEMPLR_EXTENSION', 'tplr');
 
 require_once 'init.php';
 require_once 'webpage.php';
@@ -13,6 +13,10 @@ require_once 'webpage.php';
  */
 class Templr {
 
+    /**
+     * Configuration of entire Templr library
+     * @var array
+     */
     static private $configure = [];
 
     /**
@@ -30,9 +34,12 @@ class Templr {
      * @param mixed $path A path specifing where to find the templr files
      */
     function __construct($path = "") {
+        // if only a string, append to file_path
         if (is_string($path)) {
             $this->file_path[] = $path;
-        } else if (is_array($path)) {
+        }
+        // ensure path is an array full of strings - else throw exception
+        else if (is_array($path)) {
             foreach ($path as $p) {
                 if (!is_string($p)) {
                     throw \Exception;
@@ -40,6 +47,12 @@ class Templr {
                 $this->file_path[] = $p;
             }
         }
+        // throw exception
+        else {
+            throw \Exception;
+        }
+
+        // set the relevant configuration
         self::$configure['VIEW_PATH'] = $this->file_path;
         self::$configure['TEMPLATE_PATH'] = $this->file_path;
     }
@@ -54,13 +67,13 @@ class Templr {
     }
 
     /**
-     * Gets a view pointed to by $view_name
+     * Gets the view identified by $view_name
      *
      * @param String $view_name
      * @return mFile The view
      */
     public function GetView(string $view_name) {
-
+        // loop through each directory in file_path
         foreach ($this->file_path as $dir) {
             $name = $dir . $view_name;
             if (file_exists($name) || (file_exists(($name .= ".php")))) {
@@ -70,28 +83,31 @@ class Templr {
         return NULL;
     }
 
-
     /**
      * Adds a pathname to search path
      *
      * @param string $pathname The pathname or a list of pathnames
-     * @param int $position Position in the list to insert
+     * @param int $position Position in the list to insert (-1 is the end of the list)
      */
     public function AddToPath($pathname, $position = -1) {
         if (!is_int($position)) {
             // error - wrong type for position
+            throw \Exception;
         }
+        // wrap the number around so -1 is after the last element
         if ($position < 0) {
             $position += (count($this->file_path) + 1);
         }
+        // insert at the correct position
         array_splice($this->file_path, $position, 0, $pathname);
     }
 
     public static function ViewPath() {
-        return self::$configure['VIEW_PATH'] ?: [];
+        return self::$configure['VIEW_PATH'] ? : [];
     }
 
     public static function TemplatePath() {
-        return self::$configure['TEMPLATE_PATH'] ?: [];
+        return self::$configure['TEMPLATE_PATH'] ? : [];
     }
+
 }
