@@ -15,7 +15,7 @@ Multiple blocks can be included in one file.
 
 [engine:block_name]
 
-The block tag must start on the beginning of the line. 
+The block tag must start on the beginning of the line.
 
 The templr engines receive all text following the tag, until the next one is encountered.
 The engine should produce raw php code which gets saved to a cached file, allowing subsequent hits to be run simply as a php script, with minimal pre-processing.
@@ -23,19 +23,35 @@ The engine should produce raw php code which gets saved to a cached file, allowi
 Engines
 -------
 
-?????
+Again, none of these actually work and may not currently or _ever_ exist.
+
+#### HTML
+Given html code, produce html code
+Pretty much interprets everything as given - no transformations needed
+
+#### Text
+
+Given formatted text, produce html which escapes the 'special chars' 
+
+#### Markdown
+
+Might be nice to render markdown automatically.
+
+#### HAML/Jade
+
+Generate html from haml or jade markup
 
 
 Using Templr
 --------------
- 
+
 Somewhere in your code (a common.php or config.php type file) the following variables must be defined for templr to work:
 
 TEMPLR_ROOT
     The directory where template files should be searched for
 
 TEMPLR_WEB_ROOT
-    The current website's address - necessary if the site is running from a specific uri 
+    The current website's address - necessary if the site is running from a specific uri
     example.com/~user0/a_templr_example
 
 TEMPLR_CACHE_DIR
@@ -57,7 +73,7 @@ along with all the others.
 After defining the environment, one must simply include the init file in the templr directory.
 
 `require_once('path_to_templr/templr/init.php');`
- 
+
 All templr classes are in the namespace \templr.
 
 The recommended way to use templr is to create a templr webpage object, initialized with a template which either gets printed or rendered.
@@ -81,16 +97,36 @@ In the TEMPLR_ROOT path, there should be a file named index (or rather index.TEM
     {html_head}
   </head>
   <body>
-    {htm_body}
+    <p id="text_engine">
+      {txt_body}
+    </p>
+    <p id="html_engine">
+      {html_body}
+    </p>
+    <p id="jade_engine">
+      {jb}
+    </p>
   </body>
 </html>
 
 [html:html_head]
   <title>Example Page Title</title>
 
-[text:html_body]
+[text:txt_body]
 This is generated using the text engine - all html characters will be escaped, so everything looks exactly as typed.
-So I can type &lt;b&gt;This is not bold&lt;/b&gt; without formatting.
+So I can type <b>This is not bold</b> (without formatting).
+
+[text:txt_body]
+This is generated using the html engine - all html characters will be drawn as such, so everything looks exactly as typed.
+So I can type <b>This <u>is</u> bold</b> (uses formatting).
+
+[jade:jb]
+
+span#aww_jade Bringing jade to php is a good thing, right?
+ul#jade_list
+  li.selected: a(href="#") item_one
+  li: a(href="#") item_two
+
 ```
 
 which would render:
@@ -102,8 +138,21 @@ which would render:
     <title>Example Page Title</title>
   </head>
   <body>
-This is generated using the text engine - all html characters will be escaped, so everything looks exactly as typed.
+    <p id="text_engine">
+      This is generated using the text engine - all html characters will be escaped, so everything looks exactly as typed.
 So I can type &lt;b&gt;This is not bold&lt;/b&gt; without formatting.
+    </p>
+    <p id="html_engine">
+      This is generated using the html engine - all html characters will be 
+drawn as such, so everything looks exactly as typed. So I can type <b>This <u>is</u> bold</b> (uses formatting).
+    </p>
+    <p id="jade_engine">
+      <span id='aww_jade'>Bringing jade to php is a good thing, right?</span>
+      <ul id='jade_list'>
+        <li class='selected'> <a href="#"> item_one </a> </li>
+        <li> <a href="#"> item_two </a> </li>
+      </ul>
+    </p>
   </body>
 </html>
 ```
