@@ -1,6 +1,3 @@
-
-README
-
 Templr PHP Templating Library
 =============================
 
