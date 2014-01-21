@@ -5,7 +5,10 @@ namespace templr;
 define('TEMPLR_ROOT', '.');
 define('TEMPLR_EXTENSION', 'tplr');
 
-require_once 'init.php';
+if (!_TEMPLR_INITIALIZED) {
+    require_once "init.php";
+}
+
 require_once 'webpage.php';
 
 /**
@@ -34,8 +37,12 @@ class Templr {
      * @param mixed $path A path specifing where to find the templr files
      */
     function __construct($path = "") {
+
         // if only a string, append to file_path
         if (is_string($path)) {
+            if (TEMPLR_DEBUG) {
+                print ("[Templr::Templr::__construct] DEBUG : Adding '$path' to file path \n");
+            }
             $this->file_path[] = $path;
         }
         // ensure path is an array full of strings - else throw exception
@@ -43,6 +50,9 @@ class Templr {
             foreach ($path as $p) {
                 if (!is_string($p)) {
                     throw \Exception;
+                }
+                if (TEMPLR_DEBUG) {
+                    print ("[Templr::Templr::__construct] DEBUG : Adding '$p' to file path \n");
                 }
                 $this->file_path[] = $p;
             }

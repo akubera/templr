@@ -2,7 +2,10 @@
 
 namespace templr;
 
-require_once 'init.php';
+if (!_TEMPLR_INITIALIZED) {
+    require_once "init.php";
+}
+
 require_once 'plisp/plisp.php';
 
 class Template implements \ArrayAccess {

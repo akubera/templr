@@ -9,6 +9,10 @@
 
 namespace templr;
 
+if (!_TEMPLR_INITIALIZED) {
+    require_once "init.php";
+}
+
 class WebPage implements \ArrayAccess {
 
     static $default_template_name = "index";
@@ -400,6 +404,10 @@ class WebPage implements \ArrayAccess {
         return $this->render(false);
     }
 
+}
+
+if (defined('TEMPLR_DEFAULT_NAME') ) {
+    WebPage::$default_template_name = TEMPLR_DEFAULT_NAME;
 }
 
 require_once 'init.php';
