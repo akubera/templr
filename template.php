@@ -26,9 +26,20 @@ class Template implements \ArrayAccess {
      * Template Constructor
      *
      * @param string $filename The filename of template to load
+     * @param array $opts options to pass to this class - currently unused
+     * @param boolean $is_root true if this is the root template
      */
-    public function __construct($filename, $params = [], $is_root = false) {
+    public function __construct($filename, $opts = [], $is_root = false) {
+
+        // ensure the file exists
+        if (!file_exists($filename)) {
+            throw \Exception;
+        }
+
+        // filename of template
         $this->filename = $filename;
+
+        // whether or not the template is the main source of the view
         $this->is_root_template = $is_root;
 
         // load the contents of $filename into $this->contents
@@ -40,7 +51,14 @@ class Template implements \ArrayAccess {
         } else {
             $this->contents = ob_get_clean();
         }
-        print $this->contents . "\n";
+
+        if (TEMPLR_DEBUG) {
+            print "[".__METHOD__."] Read in file {$filename}:\n";
+            print $this->contents."\n----\n\n";
+        }
+
+        print_r(static::split_into_blocks($this->contents));
+        //
 
         $matches = [];
         $filenames = [];
@@ -53,7 +71,8 @@ class Template implements \ArrayAccess {
         // search for any require statements - if so replace them
         while (preg_match(self::require_regex, $this->contents, $matches)) {
             $fname = (string)$matches[1];
-            if ($fname[0] != "/") { // Not absolute file path, append path
+            // Not absolute file path, we must append path
+            if ($fname[0] != "/") {
                 $fname = TEMPLATE_PATH.DS.$fname;
             }
 
@@ -72,6 +91,37 @@ class Template implements \ArrayAccess {
 
         // begin procesing imediately
         $this->process();
+    }
+
+    /**
+     *
+     * @param string $header Content of the file's header
+     * @return type
+     */
+    protected function process_header($header) {
+        // plisp environment
+        $plisp_env = new plisp\Plisp($this);
+
+        // evaluate the header
+        $plisp_env->Evaluate($header);
+    }
+
+    /**
+     * Splits a string $str into an array of strings, the first element is the
+     * header, and subsequent being another block
+     *
+     * @param \string $str
+     * @return array Array of strings - each one an independent block
+     */
+    static function split_into_blocks($str) {
+        // splits the contents of template into array of [0] => engine [1] => name [2] => contents
+        $split = \preg_split(self::section_regex, $str, null, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
+        $res = [];
+        foreach ($split as $key => $val) {
+            print "$key -- $val\n";
+        }
+
+        return $res;
     }
 
     private function process() {
@@ -316,8 +366,9 @@ class Template implements \ArrayAccess {
     }
 
     protected function runphps() {
-        if (!isset($this->labels['php']))
+        if (!isset($this->labels['php'])) {
             return;
+        }
 
         foreach ($this->labels['php'] as $Name => &$phps) {
             foreach ($phps['req'] as $requirements) {

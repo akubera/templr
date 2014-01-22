@@ -1,7 +1,9 @@
 #
+# @templr: VERSION 0.1.0
+# @author: Andrew Kubera
+# @date: May 07, 2034
 #
 
-% TEMPLR VERSION 0.1.0
-% author : Andrew Kubera
-% date : 
-
+[html:main]
+<DOCTYPE html>
+<html></html>

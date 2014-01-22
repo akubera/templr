@@ -3,11 +3,13 @@
 define('TEMPLR_DEBUG', true);
 
 // include the templr library
-require_once "../templr.php";
+require_once "templr.php";
 //require_once "webpage.php";
 
 // Create a templr object using templates in the directory "templates"
-$tmplr = new templr\Templr("./templates");
+$tmplr = new templr\Templr("tests/templates");
+
+$tmplr->GetView("t1.tplr");
 
 //$wp = new templr\WebPage();
 

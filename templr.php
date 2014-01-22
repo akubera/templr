@@ -9,7 +9,8 @@ if (!_TEMPLR_INITIALIZED) {
     require_once "init.php";
 }
 
-require_once 'webpage.php';
+require_once 'mfile.php';
+require_once 'template.php';
 
 /**
  * The main class which the user interacts with to use the library
@@ -41,7 +42,7 @@ class Templr {
         // if only a string, append to file_path
         if (is_string($path)) {
             if (TEMPLR_DEBUG) {
-                print ("[Templr::Templr::__construct] DEBUG : Adding '$path' to file path \n");
+                print ("[".__METHOD__."] DEBUG : Adding '$path' to file path \n");
             }
             $this->file_path[] = $path;
         }
@@ -52,7 +53,7 @@ class Templr {
                     throw \Exception;
                 }
                 if (TEMPLR_DEBUG) {
-                    print ("[Templr::Templr::__construct] DEBUG : Adding '$p' to file path \n");
+                    print ("[".__METHOD__."] DEBUG : Adding '$p' to file path \n");
                 }
                 $this->file_path[] = $p;
             }
@@ -79,16 +80,27 @@ class Templr {
     /**
      * Gets the view identified by $view_name
      *
-     * @param String $view_name
+     * @param string $view_name
      * @return mFile The view
      */
-    public function GetView(string $view_name) {
+    public function GetView($view_name) {
+
         // loop through each directory in file_path
         foreach ($this->file_path as $dir) {
-            $name = $dir . $view_name;
-            if (file_exists($name) || (file_exists(($name .= ".php")))) {
-                return new mFile($name);
+            $fname = $dir.DIRECTORY_SEPARATOR.$view_name;
+
+            if (file_exists($name = $fname) ||
+                file_exists(($name = ($fname .= ".".TEMPLR_EXTENSION))) ||
+                file_exists(($name = ($fname .= ".php"))) )
+            {
+                if (TEMPLR_DEBUG) {
+                    print "[".__METHOD__."] found view '$view_name' at $name.\n";
+                }
+                return new template($fname);
             }
+        }
+        if (TEMPLR_DEBUG) {
+            print "[".__METHOD__."] $view_name not found.\n";
         }
         return NULL;
     }

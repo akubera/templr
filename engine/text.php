@@ -21,8 +21,8 @@ require_once 'abstractengine.php';
 class TextEngine extends AbstractEngine {
 
     public function Process($content) {
-        // nothing to process! Just text (right?)
-        return $content;
+        // escape the html characters
+        return htmlentities($content);
     }
 
     public function Name() {

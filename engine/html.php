@@ -9,9 +9,15 @@ namespace templr\engine;
  */
 class HtmlEngine extends AbstractEngine {
 
+    // nothing to change - just output the content
     public function Process($content) {
         return $content;
     }
+
+    public function Name() {
+        return __CLASS__;
+    }
+
 
 }
 

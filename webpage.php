@@ -38,7 +38,7 @@ class WebPage implements \ArrayAccess {
         $template = $template ? : WebPage::$default_template_name;
 
         // the extensions of the templates
-        $ext = @$opts['extension'] ? : TEMPLR_EXTENSION;
+        $ext = in_array('extension', array_keys($opts)) ? $opts['extension'] : TEMPLR_EXTENSION;
 
         // the found filename
         $filename = "";
@@ -120,7 +120,9 @@ class WebPage implements \ArrayAccess {
             die("Could not open root templr file '{$this->_root_name}'. Aborting!");
         }
 
-        print "[". __METHOD__.  "] rendering " . $this->_root_name . "\n";
+        if (TEMPLR_DEBUG) {
+            print "[" . __METHOD__ . "] rendering {$this->_root_name}\n";
+        }
 
         // get the contents of the file
         $str = $this->load_file($this->_root_name);

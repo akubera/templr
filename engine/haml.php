@@ -13,6 +13,10 @@ class HamlEngine extends AbstractEngine  {
         return "<$content>";
     }
 
-    
+    public function Name() {
+        return __CLASS__;
+    }
+
+
 }
 
