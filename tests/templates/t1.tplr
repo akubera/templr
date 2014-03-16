@@ -6,4 +6,7 @@
 
 [html:main]
 <DOCTYPE html>
-<html></html>
+<html><body>{content}</body></html>
+
+[text:content]
+<p>Some Content</p>

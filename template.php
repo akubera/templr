@@ -7,12 +7,14 @@ if (!_TEMPLR_INITIALIZED) {
 }
 
 require_once 'plisp/plisp.php';
+require_once 'block.php';
 
 class Template implements \ArrayAccess {
 
     const require_regex = "/^ *#require +([a-zA-Z\.]+)/m"; // #require filename.txt
     const section_regex = "/\[([^:]{0,10}):([^\]]+)\]/"; // [html:body]
     const tag_regex = "/\{([^:]{0,10}:[^\}]+)\}/"; // {text:name}
+    const block_start_regex = "/(\[[^: ]{0,10}:[^\]]+\])/"; // [html:body]
 
     public $container;
     protected $filename;
@@ -21,6 +23,7 @@ class Template implements \ArrayAccess {
     protected $labels = [];
     protected $requires = [];
     protected $is_root_template;
+    protected $blocks;
 
     /**
      * Template Constructor
@@ -45,10 +48,14 @@ class Template implements \ArrayAccess {
         // load the contents of $filename into $this->contents
         ob_start();
         $bytes = readfile($filename);
+
+        // check if nothing was read in - if so this template has no contents
         if ($bytes === false || $bytes === 0) {
             $this->contents = null;
             ob_clean();
-        } else {
+        }
+        // set the member 'contents' the the entire file
+        else {
             $this->contents = ob_get_clean();
         }
 
@@ -57,40 +64,22 @@ class Template implements \ArrayAccess {
             print $this->contents."\n----\n\n";
         }
 
-        print_r(static::split_into_blocks($this->contents));
-        //
+        // split the contents into blocks
+        $blocklist = static::split_into_blocks($this->contents);
 
+        // remove the first element of the array - the header
+        $this->header = \array_shift($blocklist);
+//        $this->process_header();
+
+        // Create a Block object from each element in blocklist
+        $this->blocks = \array_map('\templr\Block::Factory', $blocklist);
+
+        $this->process_header($this->header);
         $matches = [];
         $filenames = [];
 
-        // search for plisp expressions
-        if (preg_match(plisp\PLISP::regex, $this->contents, $matches)) {
-            var_dump($matches);
-        }
-
-        // search for any require statements - if so replace them
-        while (preg_match(self::require_regex, $this->contents, $matches)) {
-            $fname = (string)$matches[1];
-            // Not absolute file path, we must append path
-            if ($fname[0] != "/") {
-                $fname = TEMPLATE_PATH.DS.$fname;
-            }
-
-            if (isset($filenames[$fname])) {
-                $this->contents = preg_replace(self::require_regex, "", $this->contents, 1);
-            } else {
-                $file_str = @file_get_contents($fname);
-                if (!$file_str) {
-                    $this->contents = preg_replace(self::require_regex, "", $this->contents, 1);
-                    continue;
-                }
-                $filenames[$fname]= true;
-                $this->contents = preg_replace(self::require_regex, $file_str, $this->contents, 1);
-            }
-        }
-
         // begin procesing imediately
-        $this->process();
+//        $this->process();
     }
 
     /**
@@ -103,7 +92,7 @@ class Template implements \ArrayAccess {
         $plisp_env = new plisp\Plisp($this);
 
         // evaluate the header
-        $plisp_env->Evaluate($header);
+        $head_eval = $plisp_env->Evaluate($header);
     }
 
     /**
@@ -114,13 +103,14 @@ class Template implements \ArrayAccess {
      * @return array Array of strings - each one an independent block
      */
     static function split_into_blocks($str) {
-        // splits the contents of template into array of [0] => engine [1] => name [2] => contents
-        $split = \preg_split(self::section_regex, $str, null, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
-        $res = [];
-        foreach ($split as $key => $val) {
-            print "$key -- $val\n";
+        // splits the contents of template into array of [0] => file header [1] => block header [2] => block contents ... etc
+        $split = \preg_split(static::block_start_regex, $str, null, \PREG_SPLIT_NO_EMPTY | \PREG_SPLIT_DELIM_CAPTURE);
+        // first element is header
+        $res = [array_shift($split)];
+        while (count($split)) {
+            // shift them two by two - i.e. include header
+            $res[] = array_shift($split) . array_shift($split);
         }
-
         return $res;
     }
 

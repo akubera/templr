@@ -22,12 +22,12 @@ class PLISP {
     static public $DEBUG = true;
 
     protected $double_ampersands = true;
-    
+
     static public function BeginSub($method = '') {
         $s = '| ';
 //        print $method $method."\n";
         if ($method) {
-            ob_start(function ($buffer) use ($s, $method) { 
+            ob_start(function ($buffer) use ($s, $method) {
              return "\n$s".preg_replace('/\n/', "\n$s", trim( "{{".$method . "}}\n" . $buffer)) . "\n";
             });
         } else {
@@ -44,38 +44,39 @@ class PLISP {
             print $ret_tag . $val;
         }
     }
-    
+
     static public function EndSub() {
-        if (PLISP::$DEBUG)
-            ob_end_flush();    
-        else 
+        if (PLISP::$DEBUG) {
+            ob_end_flush();
+        } else {
             ob_end_clean();
+        }
     }
 
     public function __construct($obj) {
       $this->obj = $obj;
     }
-    
+
     public function Evaluate($string) {
-    
+
       // No commands given
       if ($string === "") {
-        return;
+        return [];
       }
-    
+
       // remove front and end whitespace, and take out "string literals"
       $string = $this->RemoveStringLiterals(trim($string));
 
       if (!$string) {
         throw new \Exception("Trying to Evaluate empty command");
       }
-      
+
       if ($string[0] != '(') {
         $word = substr($string, 0, strpos($string, ' '));
          echo "Error : unknown command : '{$word}'. Did you mean ({$word} ...) \n";
          return null;
       }
-      
+
       // ensure number of ( matches number of )
       $l_count = substr_count($string, '(');
       $r_count = substr_count($string, ')');
@@ -83,18 +84,18 @@ class PLISP {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
       }
 
-      if (PLISP::$DEBUG) print "\n=== Building plisp header ===";
-      // Build the master list - which is a list that runs each command given 
+      if (PLISP::$DEBUG) { print "\n=== Building plisp header ==="; }
+      // Build the master list - which is a list that runs each command given
       //  in the initial plisp init string, using plisp command "all'
       $master_list = $this->BuildLists("(all $string)");
-      if (PLISP::$DEBUG) print "=== Done ===\n";
-      
-      if (PLISP::$DEBUG) print "=== Running plisp header ===";
+      if (PLISP::$DEBUG) { print "=== Done ===\n"; }
+
+      if (PLISP::$DEBUG) { print "=== Running plisp header ==="; }
 //      ob_start(function ($buffer) { return preg_replace('/\n/', "\n  ", $buffer . "\n") . "\n";});
 
       // run the master list
       $string = $master_list(); // $this->RecursiveEval($master_list);
-      if (PLISP::$DEBUG) print "=== Done ===\n";
+      if (PLISP::$DEBUG) { print "=== Done ===\n"; }
 
       if (PLISP::$DEBUG) {
         // print the end result
@@ -103,7 +104,7 @@ class PLISP {
         print " ==== ";
       }
 //      var_dump($this->Reduce());
-      print $this->jsonize();
+      return $this->jsonize();
     }
 
     //
@@ -129,13 +130,13 @@ class PLISP {
 
 //       $escaped = $str;
 //       $replace = ["_" => "__", "&" => "&&", "\\\\" => "\\_"];
-// 
+//
 //       foreach ($replace as $k => $v) {
 //         if (strpos($str, $k) !== false) {
 //           $escaped = str_replace($k, $v, $escaped);
 //         }
 //       }
-      
+
       // Now only single underscores are preceded by a backslash - replace escaped quotes (assume they're in the right place)
       $escaped = str_replace('\\"', " &ESCAPEDQUOTE&", $escaped);
 
@@ -148,7 +149,7 @@ class PLISP {
       $matches = [];
 
       // regex matches all characters between double quotes which are NOT preceded by a '\'
-      $regex = "{[^\\\](\"[^\"]*\")}m"; // '{[^\\]"((?:[^"])*)"}'; //"/[^\\\]\"((?:[^\"]|\\\")*)\"/"; //  "/[^\\\]\"(.*)\"/"; //  '/[^\\]"(.*)[^\\]"/'; // 
+      $regex = "{[^\\\](\"[^\"]*\")}m"; // '{[^\\]"((?:[^"])*)"}'; //"/[^\\\]\"((?:[^\"]|\\\")*)\"/"; //  "/[^\\\]\"(.*)\"/"; //  '/[^\\]"(.*)[^\\]"/'; //
       while (preg_match($regex, $escaped, $matches, PREG_OFFSET_CAPTURE)) {
           $quote = $matches[1];
 
@@ -167,11 +168,11 @@ class PLISP {
       return $escaped;
     }
 
-    
+
     //
-    // When given some identifier in a plisp - ensure 
+    // When given some identifier in a plisp - ensure
     //  all escaped characters are back to normal
-    // Because we use a single '&' to identify a reference, they were doubled 
+    // Because we use a single '&' to identify a reference, they were doubled
     //  upon initial reading of the string, and now must be halved
     //
     public function Clean($item) {
@@ -186,33 +187,33 @@ class PLISP {
 
 
     /**
-     * 
+     *
      * @param string $str
-     * @return array 
+     * @return array
      */
     static public function tokenize($str) {
         $res = [];
-        
+
         $str;
         return $res;
     }
-    
+
     public function set($name, $val) {
         PLISP::BeginSub(__METHOD__);
         if (plisp::$DEBUG) print "plisp.set($name, $val)\n";
 
         if (is_a($name, "templr\plisp\plispvariable")) {
             $name = $name->name;
-        } else 
-            
+        } else
+
          if (!is_string($name)) {
             throw new \Exception("Error : Attempting to identify plisp variable by something not a string! not implemented yet");
         } else
-        
+
             if ($name === '') {
             throw new \Exception("Error : Attempting to identify plisp variable by empty string!");
         }
-        
+
         // a string we must ensure is not a reference
         if ( is_string($val) ) {
             $val = $this->get($val);
@@ -222,7 +223,7 @@ class PLISP {
         if ($name[0] !== '$') {
             $name = '$' . $name;
         }
-        
+
         $v = new PlispVariable();
 
         $v->name = $name;
@@ -243,9 +244,9 @@ class PLISP {
       if (is_string($obj)) {
           $id = uniqid(plisp::$string_id_prefix);
           $this->literal_strings[$id] = &$obj;
-      } else 
+      } else
 
-      // create and store a plisp plist 
+      // create and store a plisp plist
       if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
           $id = uniqid(plisp::$list_id_prefix);
           $this->stored_lists[$id] = &$obj;
@@ -275,7 +276,7 @@ class PLISP {
           print "Calling $cname()\n";
             $name = $name();
       }
-      
+
       if (plisp::$DEBUG) print "Plisp.Get() : Looking for '$name'... ";
 
       // get whatever $name is referring to
@@ -283,8 +284,8 @@ class PLISP {
 
       if (null !== $res and '' !== $res) {
         if (plisp::$DEBUG) print "found '$res'!\n";
-           
-//        if (is_string($res)) {   
+
+//        if (is_string($res)) {
 //            $res = function () use ($res) { return $res; };
 //        }
         PLISP::ReturnSub($res);
@@ -299,7 +300,7 @@ class PLISP {
           $res = $this->Clean($name);
       }
 
-      if (plisp::$DEBUG) print "found '$res'\n";
+      if (plisp::$DEBUG) { print "found '$res'\n"; }
 
       PLISP::ReturnSub($res);
       PLISP::EndSub();
@@ -318,14 +319,14 @@ class PLISP {
       // we have a string
       if (strpos($id, plisp::$string_id_prefix) === 0) {
           return $this->literal_strings[$id];
-      } else 
-      
+      } else
+
       // we have a list
       if (strpos($id, plisp::$list_id_prefix) === 0) {
           return $this->stored_lists[$id];
       } else
-          
-      // we have a variable    
+
+      // we have a variable
       if ($id[0] === '$') {
           if (!isset($this->variables[$id])) {
               $this->variables[$id] = new PlispVariable();
@@ -337,25 +338,25 @@ class PLISP {
       }
       return null;
     }
-    
+
     public function FindId($obj) {
 
       // create and store a literal string
       if (is_string($obj)) {
           $id = array_search($obj, $this->literal_strings, true);
-      } else 
-      
+      } else
+
       if (is_a($obj, '\templr\plisp\plist') or is_subclass_of($obj, '\templr\plisp\plist')) {
           $id = array_search($obj, $this->stored_lists, true);
       }
-      
+
       return $id;
     }
-    
+
     public function Reduce() {
         return ['lists' => $this->stored_lists,'variables' => $this->variables, "strings" => $this->literal_strings];
     }
-    
+
     public function jsonize() {
         $res = $this->Reduce();
         foreach ($res as $k => &$v) {
@@ -367,8 +368,9 @@ class PLISP {
                 }
             }
         }
-        var_dump($res);
-        return json_encode($res);
+//        var_dump($res);
+//        return json_encode($res);
+        return $res;
     }
-    
+
 }

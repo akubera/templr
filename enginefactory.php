@@ -14,6 +14,8 @@ if (!_TEMPLR_INITIALIZED) {
     require_once "init.php";
 }
 
+require_once 'engine/abstractengine.php';
+
 /**
  * Static class used for hiding implementation of rendering
  *  engine creation.
@@ -37,7 +39,7 @@ class EngineFactory {
 
         if (TEMPLR_DEBUG) {
             print ("[" . __METHOD__ . "] DEBUG : Searching for engine identified by '$string' : " .
-                    ($found ? "found!" : "NOUT FOUND") . "\n");
+                    ($found ? "found!" : "NOT FOUND") . "\n");
         }
 
         if ($found) {
