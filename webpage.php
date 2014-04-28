@@ -9,9 +9,7 @@
 
 namespace templr;
 
-if (!_TEMPLR_INITIALIZED) {
-    require_once "init.php";
-}
+require_once "init.php";
 
 class WebPage implements \ArrayAccess {
 

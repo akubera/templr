@@ -25,7 +25,7 @@ class HtmlElement {
         // Removes an id from the tag name (i.e. "span#my_id")
         $id = $this->extractID($type);
 
-        // Removes all classes and stores into a list 
+        // Removes all classes and stores into a list
         $classes = $this->extractClasses($type);
 
         if ($id !== null) {
@@ -57,7 +57,7 @@ class HtmlElement {
             $a[0] = self::$default_tag_name;
         }
 
-        // a[1] now has everything after '#' char 
+        // a[1] now has everything after '#' char
         if ($a[1]):
             // $break is now index of delimeter
             $break = strpos($a[1], '.');
@@ -97,7 +97,7 @@ class HtmlElement {
     }
 
     /**
-     * 
+     *
      * @param String $class_name
      */
     public function RemoveClass($class_name) {
@@ -106,7 +106,7 @@ class HtmlElement {
     }
 
     /**
-     * 
+     *
      * @param Array $classes
      */
     public function RemoveClasses($classes) {

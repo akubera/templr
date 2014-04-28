@@ -9,7 +9,8 @@ require_once "templr.php";
 // Create a templr object using templates in the directory "templates"
 $tmplr = new templr\Templr("tests/templates");
 
-$tmplr->GetView("t1.tplr");
+$view = $tmplr->GetView("t1.tplr");
+//$view->printMissingReqs();
 
 //$wp = new templr\WebPage();
 

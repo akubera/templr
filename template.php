@@ -2,9 +2,7 @@
 
 namespace templr;
 
-if (!_TEMPLR_INITIALIZED) {
-    require_once "init.php";
-}
+require_once "init.php";
 
 require_once 'plisp/plisp.php';
 require_once 'block.php';

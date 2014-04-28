@@ -5,9 +5,7 @@ namespace templr;
 define('TEMPLR_ROOT', '.');
 define('TEMPLR_EXTENSION', 'tplr');
 
-if (!_TEMPLR_INITIALIZED) {
-    require_once "init.php";
-}
+require_once "init.php";
 
 require_once 'mfile.php';
 require_once 'template.php';
@@ -94,13 +92,13 @@ class Templr {
                 file_exists(($name = ($fname .= ".php"))) )
             {
                 if (TEMPLR_DEBUG) {
-                    print "[".__METHOD__."] found view '$view_name' at $name.\n";
+                    print "[".__METHOD__."] DEBUG found view '$view_name' at $name.\n";
                 }
                 return new template($fname);
             }
         }
         if (TEMPLR_DEBUG) {
-            print "[".__METHOD__."] $view_name not found.\n";
+            print "[".__METHOD__."] DEBUG $view_name not found.\n";
         }
         return NULL;
     }
@@ -114,7 +112,7 @@ class Templr {
     public function AddToPath($pathname, $position = -1) {
         if (!is_int($position)) {
             // error - wrong type for position
-            throw \Exception;
+            throw \InvalidArgumentException;
         }
         // wrap the number around so -1 is after the last element
         if ($position < 0) {
