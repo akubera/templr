@@ -20,7 +20,7 @@ class HtmlElement {
 
     public function __construct($type, $attributes = [], $text = "", $selfclose = false) {
         if (type === "") {
-            throw new Exception("Type must not be empty string");
+            throw new Exception("Type must NOT be empty string.");
         }
         // Removes an id from the tag name (i.e. "span#my_id")
         $id = $this->extractID($type);
@@ -58,7 +58,7 @@ class HtmlElement {
         }
 
         // a[1] now has everything after '#' char
-        if ($a[1]):
+        if ($a[1]) {
             // $break is now index of delimeter
             $break = strpos($a[1], '.');
 
@@ -70,7 +70,7 @@ class HtmlElement {
                 $id = substr($a[1], 0, $break);
                 $str = $a[0] . substr($a[1], $break);
             }
-        endif;
+        }
         return $id;
     }
 

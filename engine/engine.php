@@ -8,19 +8,13 @@
  *
  */
 
-namespace templr;
-
-if (!_TEMPLR_INITIALIZED) {
-    require_once "init.php";
-}
-
-require_once 'engine/abstractengine.php';
+namespace templr\engine;
 
 /**
  * Static class used for hiding implementation of rendering
  *  engine creation.
  */
-class EngineFactory {
+abstract class Engine {
 
     static private $engine_map = ["html" => ["file" => "engine/html.php", "class" => "engine\HtmlEngine"],
                                   "text" => ["file" => "engine/text.php", "class" => "engine\TextEngine"],
@@ -58,5 +52,17 @@ class EngineFactory {
             throw \Exception;
         }
     }
+
+    public function Name() {
+        return "AbstractEngine";
+    }
+
+    /**
+     * Function a concrete engine MUST implement which reads in the content of
+     * the block - and retruns an object with parsed output and references to
+     * variables.
+     */
+    abstract public function Process($content);
+
 
 }

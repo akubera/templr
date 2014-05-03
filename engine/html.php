@@ -7,7 +7,7 @@ namespace templr\engine;
  *
  * @author Andrew Kubera <andrewkubera@gmail.com>
  */
-class HtmlEngine extends AbstractEngine {
+class HtmlEngine extends Engine {
 
     // nothing to change - just output the content
     public function Process($content) {

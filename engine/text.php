@@ -11,14 +11,12 @@
 
 namespace templr\engine;
 
-require_once 'abstractengine.php';
-
 /**
  * class text
  *
  * @author Andrew Kubera <andrewkubera@gmail.com>
  */
-class TextEngine extends AbstractEngine {
+class TextEngine extends Engine {
 
     public function Process($content) {
         // escape the html characters

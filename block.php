@@ -11,7 +11,7 @@
 
 namespace templr;
 
-require_once 'enginefactory.php';
+require_once 'engine/Engine.php';
 
 class Block {
 
@@ -58,7 +58,7 @@ class Block {
 
         // set block stuff
         $this->id = $block_id;
-        $this->engine = \templr\EngineFactory::Create($engine_name);
+        $this->engine = engine\Engine::Create($engine_name);
 
         if (TEMPLR_DEBUG) {
             print "[".__METHOD__."] DEBUG Produces : '" . $this->engine->Process($contents) . "'\n";
