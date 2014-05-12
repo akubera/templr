@@ -35,7 +35,7 @@ class Block {
         $b = [];
         preg_match(Block::$id_splitter, $contents, $b);
         if (TEMPLR_DEBUG) {
-            print "[".__METHOD__."] DEBUG ***\n";
+            print "[".__METHOD__."] DEBUG ****\n";
             print_r($b);
             print "***\n";
         }
@@ -62,7 +62,7 @@ class Block {
 
         if (TEMPLR_DEBUG) {
             print "[".__METHOD__."] DEBUG Produces : '" . $this->engine->Process($contents) . "'\n";
-            print "[".__METHOD__."] DEBUG ***\n";
+            print "[".__METHOD__."] DEBUG **** Done\n";
         }
 
     }

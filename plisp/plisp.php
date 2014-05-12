@@ -53,6 +53,11 @@ class PLISP {
         }
     }
 
+    /**
+     * What was this supposed to DO?
+     *
+     * @param type $obj
+     */
     public function __construct($obj) {
       $this->obj = $obj;
     }
@@ -71,9 +76,18 @@ class PLISP {
         throw new \Exception("Trying to Evaluate empty command");
       }
 
-      if ($string[0] != '(') {
+      // Remove comments
+      $string = preg_replace('/^#.*/m', "", $string);
+      if ($string[0] === '#') {
+          //
+          print "Comment\n";
+          print "$string\n";
+          return [];
+      }
+      // check if NOT beginning of plisp command
+      else if ($string[0] != '(') {
         $word = substr($string, 0, strpos($string, ' '));
-         echo "Error : unknown command : '{$word}'. Did you mean ({$word} ...) \n";
+         echo "[".__METHOD__."] Error : unknown command : '{$word}'. Did you mean ({$word} ...) \n";
          return null;
       }
 
@@ -82,6 +96,8 @@ class PLISP {
       $r_count = substr_count($string, ')');
       if ($l_count !== $r_count) {
         throw new \Exception("Error : Parens mismatch. Unequal number of '(' and ')' characters (" . $l_count . " != " .$r_count . ") in string:\n\t$string\n");
+      } else if ($l_count === 0) {
+          return [];
       }
 
       if (PLISP::$DEBUG) { print "\n=== Building plisp header ==="; }
@@ -200,17 +216,17 @@ class PLISP {
 
     public function set($name, $val) {
         PLISP::BeginSub(__METHOD__);
-        if (plisp::$DEBUG) print "plisp.set($name, $val)\n";
+        if (plisp::$DEBUG) {
+            print '['.__METHOD__."] DEBUG name='{$name}' val='{$val}'\n";
+        }
 
         if (is_a($name, "templr\plisp\plispvariable")) {
             $name = $name->name;
-        } else
-
-         if (!is_string($name)) {
+        }
+        else if (!is_string($name)) {
             throw new \Exception("Error : Attempting to identify plisp variable by something not a string! not implemented yet");
-        } else
-
-            if ($name === '') {
+        }
+        else if ($name === '') {
             throw new \Exception("Error : Attempting to identify plisp variable by empty string!");
         }
 
@@ -232,8 +248,10 @@ class PLISP {
 
         $this->variables[$name] = $v;
 
-        if (plisp::$DEBUG) var_dump($this->variables);
-        if (plisp::$DEBUG) print "-- plisp.set Done\n";
+        if (plisp::$DEBUG) {
+            var_dump($this->variables);
+            print "-- plisp.set Done\n";
+        }
         PLISP::EndSub();
     }
 
@@ -373,4 +391,13 @@ class PLISP {
         return $res;
     }
 
+    /**
+     * Returns a string with comments and duplicate spaces removed from the
+     *
+     * @param type $str
+     * @return type
+     */
+    static public function HeaderClean($str) {
+        return trim(preg_replace('/  +/m',' ', preg_replace('/^#.*/m', "", $str)));
+    }
 }

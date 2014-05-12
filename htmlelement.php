@@ -66,7 +66,9 @@ class HtmlElement {
             if ($break === false) {
                 $id = $a[1];
                 $str = $a[0];
-            } else {
+            }
+            // splits id away from str
+            else {
                 $id = substr($a[1], 0, $break);
                 $str = $a[0] . substr($a[1], $break);
             }

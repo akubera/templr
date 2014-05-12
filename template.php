@@ -22,6 +22,7 @@ class Template implements \ArrayAccess {
     protected $requires = [];
     protected $is_root_template;
     protected $blocks;
+    protected $plisp_env;
 
     /**
      * Template Constructor
@@ -66,31 +67,50 @@ class Template implements \ArrayAccess {
         $blocklist = static::split_into_blocks($this->contents);
 
         // remove the first element of the array - the header
-        $this->header = \array_shift($blocklist);
-//        $this->process_header();
+        $this->header_raw = \array_shift($blocklist);
+        $this->header = plisp\PLISP::HeaderClean($this->header_raw);
+
+        // Sets up the plisp environment
+        $header_info = $this->process_header();
 
         // Create a Block object from each element in blocklist
         $this->blocks = \array_map('\templr\Block::Factory', $blocklist);
 
-        $this->process_header($this->header);
         $matches = [];
         $filenames = [];
+
+        if (TEMPLR_DEBUG) {
+            print "[".__METHOD__."] Header info : '";
+            print_r($header_info);
+            print "'\n";
+        }
 
         // begin procesing imediately
 //        $this->process();
     }
 
     /**
+     * Setup Plisp environment
      *
      * @param string $header Content of the file's header
      * @return type
      */
     protected function process_header($header) {
+
         // plisp environment
-        $plisp_env = new plisp\Plisp($this);
+        $this->plisp_env = new plisp\Plisp($this);
+
+        if (plisp\PLISP::$DEBUG) {
+            print "[".__METHOD__."] Begin \n";
+        }
 
         // evaluate the header
-        $head_eval = $plisp_env->Evaluate($header);
+        $this->plisp_env->Evaluate($this->header);
+        print_r($this->plisp_env);
+
+        if (plisp\PLISP::$DEBUG) {
+            print "[".__METHOD__."] Done\n";
+        }
     }
 
     /**
@@ -264,8 +284,9 @@ class Template implements \ArrayAccess {
         // prefix to help format output during recursive calls
         static $prefix = " ";
         static $one = 1;
-        if ($debug)
+        if ($debug || PLISP::$DEBUG) {
             print $prefix . "parsing $class:$name\n";
+        }
         if (!isset($this->labels[$class][$name]['data'])) {
             return null;
         }
