@@ -94,12 +94,17 @@ class Templr {
                 if (TEMPLR_DEBUG) {
                     print "[".__METHOD__."] DEBUG found view '$view_name' at $name.\n";
                 }
-                return new template($fname);
+                // TODO : Check for processed file in cache HERE
+
+                // Create the template from the file
+                return new template($name);
             }
         }
         if (TEMPLR_DEBUG) {
-            print "[".__METHOD__."] DEBUG $view_name not found.\n";
+            print "[".__METHOD__."] DEBUG View '{$view_name}' not found.\n";
         }
+
+        // No file found - either null or throw error - I think null is better
         return NULL;
     }
 

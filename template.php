@@ -31,11 +31,11 @@ class Template implements \ArrayAccess {
      * @param array $opts options to pass to this class - currently unused
      * @param boolean $is_root true if this is the root template
      */
-    public function __construct($filename, $opts = [], $is_root = false) {
+    public function __construct($filename, $opts = [], $is_root = true) {
 
         // ensure the file exists
         if (!file_exists($filename)) {
-            throw \Exception;
+            throw \Exception($filename) ;
         }
 
         // filename of template
@@ -53,7 +53,7 @@ class Template implements \ArrayAccess {
             $this->contents = null;
             ob_clean();
         }
-        // set the member 'contents' the the entire file
+        // set the member 'contents' to the entire file
         else {
             $this->contents = ob_get_clean();
         }
@@ -71,7 +71,7 @@ class Template implements \ArrayAccess {
         $this->header = plisp\PLISP::HeaderClean($this->header_raw);
 
         // Sets up the plisp environment
-        $header_info = $this->process_header();
+        $this->SetupPlispFromHeader();
 
         // Create a Block object from each element in blocklist
         $this->blocks = \array_map('\templr\Block::Factory', $blocklist);
@@ -80,9 +80,7 @@ class Template implements \ArrayAccess {
         $filenames = [];
 
         if (TEMPLR_DEBUG) {
-            print "[".__METHOD__."] Header info : '";
-            print_r($header_info);
-            print "'\n";
+            print "[".__METHOD__."] Done\n";
         }
 
         // begin procesing imediately
@@ -90,12 +88,10 @@ class Template implements \ArrayAccess {
     }
 
     /**
-     * Setup Plisp environment
+     * Setup Plisp environment using value stored in $this->header
      *
-     * @param string $header Content of the file's header
-     * @return type
      */
-    protected function process_header($header) {
+    protected function SetupPlispFromHeader() {
 
         // plisp environment
         $this->plisp_env = new plisp\Plisp($this);
