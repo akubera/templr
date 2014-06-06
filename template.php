@@ -102,7 +102,6 @@ class Template implements \ArrayAccess {
 
         // evaluate the header
         $this->plisp_env->Evaluate($this->header);
-        print_r($this->plisp_env);
 
         if (plisp\PLISP::$DEBUG) {
             print "[".__METHOD__."] Done\n";
@@ -342,8 +341,9 @@ class Template implements \ArrayAccess {
                     $prefix = substr($prefix, 0, -1);
                     if ($string) {
                         $search = '{' . $Class . ':' . $Name . '}';
-                        if ($debug)
-                            print $prefix . "replacing '$search' with '$string'\n";
+                        if ($debug || PLISP::$DEBUG) {
+                            print "{$prefix} replacing '{$search}' with '{$string}'\n";
+                        }
                         if ($Class == "php") {
                             try {
                                 $string = eval("return " . $string);
@@ -360,13 +360,15 @@ class Template implements \ArrayAccess {
             }
         }
 
-        if ($data != null)
-        // Unset the new names
+        if ($data != null) {
+            // Unset the new names
             foreach ($data as $name => $d) {
                 unset($$name);
             }
-        if ($debug)
+        }
+        if ($debug || PLISP::$DEBUG) {
             print $prefix . "returning $str\n";
+        }
         return $str;
     }
 
@@ -374,20 +376,12 @@ class Template implements \ArrayAccess {
         if (!isset($this->labels['php'])) {
             return;
         }
+        $res = array();
 
         foreach ($this->labels['php'] as $Name => &$phps) {
             foreach ($phps['req'] as $requirements) {
-
             }
         }
-    }
-
-    /*
-     * Stateless processing functions
-     */
-
-    static function StripComments(&$string) {
-
     }
 
     /*
@@ -414,6 +408,3 @@ class Template implements \ArrayAccess {
     }
 
 }
-
-require_once 'init.php';
-
