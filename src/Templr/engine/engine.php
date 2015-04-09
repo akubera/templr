@@ -49,7 +49,7 @@ abstract class Engine {
             $classname = "\\templr\\" . $engine['class'];
             return new $classname;
         } else {
-            throw \Exception;
+            throw new \Exception('Not Found');
         }
     }
 

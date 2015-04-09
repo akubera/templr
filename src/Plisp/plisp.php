@@ -1,28 +1,57 @@
 <?php
 /*
  * plisp/plisp.php
+ *
+ * Defines the PLISP class for programming all kinds of objects
  */
 
 namespace templr\plisp;
 
+/**
+ * PLisp Environment which causes
+ * 
+ * 
+ */
 class PLISP {
 
+    /** The regex which selects an inner-most list command */
     const regex = "/^\(((?>[^()]+)|(?:R))*\) *$/"; // (function arg1 arg2)
 
+    /** prefix  */
     protected $prefix = "";
+
+    /** List of literal strings read in from the  */
     protected $literal_strings = [];
+
+    /** List of functions in plisp */
     protected $stored_lists = [];
+
+    /** List of variables */
     protected $variables = [];
+
+    /** Not used list   */
     protected $extended_files = [];
+
+    /** Not used List of variables detected  */
     protected $included_files = [];
 
+    /** Prefix added to literal strings */ 
     static protected $string_id_prefix = "&STR";
+    
+    /** Prefix added to plisp list names */
     static protected $list_id_prefix = "&LST";
 
+    /** Boolean set to debug */
     static public $DEBUG = true;
 
+    /** Whether it is neccesary to double ampersands? Not sure. */
     protected $double_ampersands = true;
 
+    /**
+     * Begin substitution
+     *
+     *
+     */
     static public function BeginSub($method = '') {
         $s = '| ';
 //        print $method $method."\n";
@@ -62,6 +91,11 @@ class PLISP {
       $this->obj = $obj;
     }
 
+    /**
+     * Process a string
+     *
+     * @return JSON format of the resulting Plisp environment 
+     */
     public function Evaluate($string) {
 
       // No commands given
@@ -123,7 +157,10 @@ class PLISP {
       return $this->jsonize();
     }
 
-    //
+    /**
+     * Generate the list of lists from the provided strings
+     *
+     */
     protected function BuildLists($str) {
         PLISP::BeginSub(__METHOD__);
         $res = plist::GenerateFromString($str, $this);
@@ -131,9 +168,17 @@ class PLISP {
         return $res;
     }
 
+    /**
+     * Remove anything within "quotes" as a literal string
+     *
+     * Replace all such strings with a randomly generated keyword like &RNDM
+     */
     protected function RemoveStringLiterals($str) {
 
+      // Get first quote mark
       $begin = strpos($str, '"');
+
+      // escape all ampersands with double ampersands
       $str = str_replace("&", "&&", $str);
 
       // cool - no strings to worry about
@@ -372,18 +417,14 @@ class PLISP {
     }
 
     public function Reduce() {
-        return ['lists' => $this->stored_lists,'variables' => $this->variables, "strings" => $this->literal_strings];
+        return ['lists' => $this->stored_lists, 'variables' => $this->variables, "strings" => $this->literal_strings];
     }
 
     public function jsonize() {
         $res = $this->Reduce();
         foreach ($res as $k => &$v) {
             foreach ($v as $id => &$thing) {
-                if (is_a($thing, "templr\plisp\Plist")) {
-                    $res[$k][$id] = $thing->jsonize();
-                } else {
-                    $res[$k][$id] = json_encode($thing);
-                }
+                $res[$k][$id] = is_a($thing, "templr\plisp\Plist") ? $thing->jsonize() : json_encode($thing);
             }
         }
 //        var_dump($res);

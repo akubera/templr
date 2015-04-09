@@ -2,8 +2,10 @@
 
 namespace templr;
 
-define('TEMPLR_ROOT', '.');
-define('TEMPLR_EXTENSION', 'tplr');
+if (!defined('TEMPLR_ROOT'))
+  define('TEMPLR_ROOT', '.');
+// define('TEMPLR_EXTENSION', '.tplr');
+define('TEMPLR_EXTENSION', '.php');
 
 require_once "init.php";
 

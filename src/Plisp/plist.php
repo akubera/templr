@@ -275,6 +275,9 @@ class Plist implements \ArrayAccess, \Iterator, \Countable {
       return $new_plist;
     }
 
+    /**
+     *  Generate a PList from the data located at index $offset
+     */ 
     public function Slice(int $offset, int $length = NULL) {
       return new Plist(array_slice($this->_data, $offset, $length));
     }
